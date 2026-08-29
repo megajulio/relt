@@ -49,7 +49,7 @@ async function main() {
 
   try {
     const response = await relt.messages.send({
-      to: testPhone,
+      to: testPhone!,
       text: 'Hello from Relt Quickstart! 🚀\n\nThis message was sent using the Relt SDK.',
     });
 
