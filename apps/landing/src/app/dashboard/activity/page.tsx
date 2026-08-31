@@ -2,14 +2,15 @@
 
 import { useAuth } from '@/lib/use-auth';
 import { api } from '@/lib/api';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type ActivityEvent = {
   id: string;
   event_type: string;
   status: 'success' | 'failure' | 'error';
-  actor: { type: string; id: string | null };
-  resource: { type: string; id: string | null };
+  actor: { type: string; id: string | null } | null;
+  resource: { type: string; id: string | null } | null;
   metadata: Record<string, unknown>;
   request_id: string | null;
   trace_id: string | null;
@@ -21,14 +22,50 @@ type ActivityResponse = {
   next_cursor: string | null;
 };
 
+const EVENT_TYPES = [
+  'api_key.created',
+  'api_key.revoked',
+  'api_key.expired',
+  'message.queued',
+  'message.sent',
+  'message.delivered',
+  'message.failed',
+  'webhook.received',
+  'webhook.delivered',
+  'webhook.failed',
+  'webhook.retry',
+  'provider.request',
+  'provider.error',
+  'auth.login',
+  'auth.login_failed',
+] as const;
+
+const STATUS_OPTIONS = ['success', 'failure', 'error'] as const;
+
+const DATE_RANGES = [
+  { value: 'all', label: 'All time' },
+  { value: '1h', label: 'Last hour' },
+  { value: '24h', label: 'Last 24h' },
+  { value: '7d', label: 'Last 7 days' },
+  { value: '30d', label: 'Last 30 days' },
+] as const;
+
 const EVENT_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
   'api_key.created': { icon: '🔑', label: 'API key created', color: 'text-green-400' },
   'api_key.revoked': { icon: '🔑', label: 'API key revoked', color: 'text-red-400' },
+  'api_key.expired': { icon: '🔑', label: 'API key expired', color: 'text-yellow-400' },
   'message.queued': { icon: '📨', label: 'Message queued', color: 'text-blue-400' },
+  'message.sent': { icon: '📨', label: 'Message sent', color: 'text-blue-400' },
+  'message.delivered': { icon: '📨', label: 'Message delivered', color: 'text-green-400' },
+  'message.failed': { icon: '📨', label: 'Message failed', color: 'text-red-400' },
+  'provider.request': { icon: '📡', label: 'Provider request', color: 'text-blue-400' },
   'provider.error': { icon: '📡', label: 'Provider error', color: 'text-red-400' },
   'webhook.received': { icon: '📥', label: 'Webhook received', color: 'text-yellow-400' },
   'webhook.delivered': { icon: '📤', label: 'Webhook delivered', color: 'text-green-400' },
   'webhook.failed': { icon: '📤', label: 'Webhook failed', color: 'text-red-400' },
+  'webhook.retry': { icon: '📤', label: 'Webhook retry', color: 'text-yellow-400' },
+  'auth.login': { icon: '👤', label: 'Login', color: 'text-green-400' },
+  'auth.login_failed': { icon: '👤', label: 'Login failed', color: 'text-red-400' },
 };
 
 function timeAgo(iso: string): string {
@@ -43,8 +80,35 @@ function timeAgo(iso: string): string {
   return `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
+function rangeToISO(range: string): { from: string | null; to: string | null } {
+  if (range === 'all' || !range) return { from: null, to: null };
+  const now = new Date();
+  const ms: Record<string, number> = {
+    '1h': 60 * 60 * 1000,
+    '24h': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+    '30d': 30 * 24 * 60 * 60 * 1000,
+  };
+  const delta = ms[range];
+  if (!delta) return { from: null, to: null };
+  return {
+    from: new Date(now.getTime() - delta).toISOString(),
+    to: null, // intervalo [from, now+inf) es suficiente para presets
+  };
+}
+
 export default function ActivityPage() {
   const auth = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Filtros leídos desde URL
+  const eventType = searchParams.get('event_type') || '';
+  const status = searchParams.get('status') || '';
+  const range = searchParams.get('range') || 'all';
+  const searchParam = searchParams.get('search') || '';
+
+  // Estados
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -53,12 +117,39 @@ export default function ActivityPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const copyToClipboard = (key: string, text: string) => {
-    navigator.clipboard.writeText(text).catch(() => {});
-    setCopied(key);
-    setTimeout(() => setCopied(null), 1500);
+  // Search con debounce (estado local + ref para el timer)
+  const [searchInput, setSearchInput] = useState(searchParam);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sincronizar searchInput cuando viene desde URL
+  useEffect(() => {
+    setSearchInput(searchParam);
+  }, [searchParam]);
+
+  const updateParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.push(`/dashboard/activity?${params.toString()}`);
   };
 
+  const buildPath = (cursor?: string): string => {
+    const params = new URLSearchParams();
+    if (eventType) params.set('event_type', eventType);
+    if (status) params.set('status', status);
+    if (searchParam) params.set('search', searchParam);
+    const { from, to } = rangeToISO(range);
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (cursor) params.set('cursor', cursor);
+    params.set('limit', '50');
+    return `/control/v1/activity?${params.toString()}`;
+  };
+
+  // Fetch inicial + cuando cambian filtros (resetea cursor)
   useEffect(() => {
     if (auth.status !== 'authenticated') {
       setLoading(false);
@@ -68,8 +159,9 @@ export default function ActivityPage() {
     const fetchActivity = async () => {
       setLoading(true);
       setError(null);
+      setExpandedId(null);
       try {
-        const data = await api.get<ActivityResponse>('/control/v1/activity');
+        const data = await api.get<ActivityResponse>(buildPath());
         setEvents(data.data);
         setNextCursor(data.next_cursor);
       } catch (err: any) {
@@ -81,15 +173,27 @@ export default function ActivityPage() {
 
     fetchActivity();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth.status]);
+  }, [auth.status, eventType, status, range, searchParam]);
+
+  // Debounce del input de búsqueda
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (searchInput !== searchParam) {
+        updateParam('search', searchInput);
+      }
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
   const loadMore = async () => {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const data = await api.get<ActivityResponse>(
-        `/control/v1/activity?cursor=${encodeURIComponent(nextCursor)}`
-      );
+      const data = await api.get<ActivityResponse>(buildPath(nextCursor));
       setEvents((prev) => [...prev, ...data.data]);
       setNextCursor(data.next_cursor);
     } catch (err: any) {
@@ -99,15 +203,110 @@ export default function ActivityPage() {
     }
   };
 
+  const copyToClipboard = (key: string, text: string) => {
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopied(key);
+    setTimeout(() => setCopied(null), 1500);
+  };
+
+  const clearAll = () => {
+    router.push('/dashboard/activity');
+    setSearchInput('');
+  };
+
+  const hasFilters = useMemo(
+    () => Boolean(eventType || status || range !== 'all' || searchParam),
+    [eventType, status, range, searchParam]
+  );
+
   if (auth.status !== 'authenticated') return null;
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-6xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white">Activity</h1>
         <p className="text-gray-400 mt-1">What happened in your account and resources.</p>
       </div>
 
+      {/* Filtros */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+          {/* Search */}
+          <div className="lg:col-span-2">
+            <label className="block text-xs text-gray-500 mb-1">Search</label>
+            <input
+              type="text"
+              placeholder="event type, metadata..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-600"
+            />
+          </div>
+
+          {/* Event type */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Event type</label>
+            <select
+              value={eventType}
+              onChange={(e) => updateParam('event_type', e.target.value)}
+              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm text-white focus:outline-none focus:border-blue-600"
+            >
+              <option value="">All events</option>
+              {EVENT_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Status</label>
+            <select
+              value={status}
+              onChange={(e) => updateParam('status', e.target.value)}
+              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm text-white focus:outline-none focus:border-blue-600"
+            >
+              <option value="">All statuses</option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date range */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Date range</label>
+            <select
+              value={range}
+              onChange={(e) => updateParam('range', e.target.value)}
+              className="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm text-white focus:outline-none focus:border-blue-600"
+            >
+              {DATE_RANGES.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {hasFilters && (
+          <div className="mt-3 pt-3 border-t border-gray-800 flex justify-end">
+            <button
+              onClick={clearAll}
+              className="text-xs text-gray-400 hover:text-white transition-colors"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Lista */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-gray-400">Loading events...</div>
@@ -120,7 +319,9 @@ export default function ActivityPage() {
             </span>
           </div>
         ) : events.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">No activity yet.</div>
+          <div className="p-12 text-center text-gray-500">
+            {hasFilters ? 'No events match your filters.' : 'No activity yet.'}
+          </div>
         ) : (
           <ul className="divide-y divide-gray-800">
             {events.map((event) => {
@@ -152,9 +353,7 @@ export default function ActivityPage() {
                         </span>
                       </div>
 
-                      <div className="text-sm text-gray-400 mt-1">
-                        {timeAgo(event.created_at)}
-                      </div>
+                      <div className="text-sm text-gray-400 mt-1">{timeAgo(event.created_at)}</div>
 
                       {(event.request_id || event.trace_id) && (
                         <div className="flex gap-4 mt-2 text-xs font-mono">
