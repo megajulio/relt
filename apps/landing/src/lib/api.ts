@@ -1,4 +1,8 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_BASE) {
+  throw new Error('NEXT_PUBLIC_API_URL is not configured');
+}
 
 interface ApiError {
   type?: string;
@@ -14,7 +18,7 @@ async function request<T>(
 ): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
-    credentials: 'include', // Importante: enviar cookies HttpOnly
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -31,6 +35,11 @@ async function request<T>(
     throw new Error(error.detail || `HTTP ${response.status}`);
   }
 
+  // 204 No Content / 205 Reset Content no tienen body
+  if (response.status === 204 || response.status === 205) {
+    return null as T;
+  }
+
   return response.json();
 }
 
@@ -41,4 +50,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  patch: <T>(path: string, body: any) =>
+    request<T>(path, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  request: <T>(path: string, init?: RequestInit) => request<T>(path, init),
 };

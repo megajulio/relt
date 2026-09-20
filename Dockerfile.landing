@@ -7,6 +7,8 @@ WORKDIR /app
 
 # ---------- Builder ----------
 FROM base AS builder
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN corepack enable && corepack prepare pnpm@9.7.0 --activate
 
 # Copiar todo (el .dockerignore excluye node_modules/.next/.git)
