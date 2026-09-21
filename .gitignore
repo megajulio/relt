@@ -8,3 +8,5 @@ dist/
 *.log
 .DS_Store
 *.tar
+tsconfig.tsbuildinfo
+fix-status-control.cjs

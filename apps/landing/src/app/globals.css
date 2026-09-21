@@ -1,1 +1,48 @@
 @import "tailwindcss";
+
+/* --- RELT landing v2: demo animations --- */
+@keyframes pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+}
+.animate-pulse-blue { animation: pulse-blue 1.8s ease-in-out infinite; }
+
+@keyframes flow-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-flow-in { animation: flow-in 0.35s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-blue, .animate-flow-in { animation: none !important; }
+}
+
+/* --- RELT landing v2: demo animations --- */
+@keyframes pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+}
+.animate-pulse-blue { animation: pulse-blue 1.8s ease-in-out infinite; }
+
+@keyframes flow-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-flow-in { animation: flow-in 0.35s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-blue, .animate-flow-in { animation: none !important; }
+}
+
+/* --- RELT: traveling light (Connect bridge) --- */
+@keyframes connect-travel {
+  0% { left: -10%; opacity: 0; }
+  10% { opacity: 0.8; }
+  50% { opacity: 1; }
+  90% { opacity: 0.8; }
+  100% { left: 105%; opacity: 0; }
+}
+.connect-travel { animation: connect-travel 4.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .connect-travel { display: none; }
+}
