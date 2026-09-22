@@ -253,3 +253,19 @@ export async function updateAgentStatus(
     body: JSON.stringify({ status }),
   });
 }
+
+// --- I: Create + UpdateStatus ---
+
+export interface CreateAgentInput {
+  key: string;
+  name: string;
+  defaultSkill?: string;
+  status?: 'active' | 'paused' | 'archived';
+  config?: AgentConfig;
+}
+
+export async function createAgent(input: CreateAgentInput): Promise<Agent> {
+  const response = await api.post<BackendAgent>('/control/v1/agents', input);
+  return toAgent(response);
+}
+

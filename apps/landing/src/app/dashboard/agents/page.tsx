@@ -38,6 +38,12 @@ export default function AgentsPage() {
           <h1 className="text-3xl font-bold text-white">Agents</h1>
           <p className="text-gray-400 mt-1">Manage your AI agents and their configurations.</p>
         </div>
+        <Link
+          href="/dashboard/agents/new"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          Create Agent
+        </Link>
       </div>
 
       {/* Content */}
