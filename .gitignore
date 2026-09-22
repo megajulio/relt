@@ -10,3 +10,4 @@ dist/
 *.tar
 tsconfig.tsbuildinfo
 fix-status-control.cjs
+/next

@@ -3,9 +3,11 @@
 import { useAuth } from '@/lib/use-auth';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Overview', exact: true },
+  { href: '/dashboard/agents', label: 'Agents' },
   { href: '/dashboard/api-keys', label: 'API Keys' },
   { href: '/dashboard/activity', label: 'Activity' },
   { href: '/dashboard/quickstart', label: 'Quickstart' },
@@ -36,9 +38,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
         <div className="p-6 border-b border-gray-800">
-          <Link href="/" className="text-2xl font-bold text-white">
-            relt
-          </Link>
+<Image
+  src="/images/relt-logo.png"
+  alt="Relt Logo"
+  width={150} 
+  height={32}
+  // Agrega esto para complacer al optimizador
+  style={{ width: 'auto' }} 
+  // Usa solo la altura que desees
+  className="h-8" 
+  priority
+/>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
