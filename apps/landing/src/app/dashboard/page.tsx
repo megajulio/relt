@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/use-auth';
 import Link from 'next/link';
+import { SandboxStatusCard } from '@/components/dashboard/SandboxStatusCard';
 
 export default function DashboardOverviewPage() {
   const auth = useAuth();
@@ -15,9 +16,9 @@ export default function DashboardOverviewPage() {
 
   const checklist = [
     { label: 'Create your account', done: true },
-    { label: 'Create an API key', done: false, cta: { href: '/dashboard/api-keys', label: 'Create key' } },
-    { label: 'Send your first WhatsApp message', done: false, cta: { href: '/dashboard/quickstart', label: 'Quickstart' } },
-    { label: 'Receive your first webhook', done: false, cta: { href: '/dashboard/quickstart', label: 'Docs' } },
+    { label: 'Activate your sandbox', done: false, cta: { href: '/dashboard/sandbox', label: 'View status' } },
+    { label: 'Create your first agent', done: false, cta: { href: '/dashboard/agents', label: 'Create agent' } },
+    { label: 'Send your first message', done: false, cta: { href: '/dashboard/quickstart', label: 'Quickstart' } },
   ];
 
   return (
@@ -43,6 +44,9 @@ export default function DashboardOverviewPage() {
           </Link>
         </div>
       </div>
+
+      {/* Sandbox status (H) */}
+      <SandboxStatusCard orgId={activeOrg?.id} />
 
       {/* Get started checklist */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
@@ -76,15 +80,6 @@ export default function DashboardOverviewPage() {
             </li>
           ))}
         </ul>
-      </div>
-
-      {/* Pro tip */}
-      <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-6">
-        <div className="text-sm font-semibold text-blue-400 mb-1">💡 Time to first message</div>
-        <p className="text-sm text-gray-300">
-          Once you have an API key, you can send your first WhatsApp message in under 2 minutes
-          with just 3 lines of code.
-        </p>
       </div>
     </div>
   );
