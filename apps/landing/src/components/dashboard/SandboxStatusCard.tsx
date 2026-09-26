@@ -4,9 +4,13 @@ import { useSandboxStatus } from '@/lib/use-sandbox-status';
 
 interface SandboxStatusCardProps {
   orgId: string | undefined;
+  connected?: boolean;
 }
 
-export function SandboxStatusCard({ orgId }: SandboxStatusCardProps) {
+export function SandboxStatusCard({
+  orgId,
+  connected = false,
+}: SandboxStatusCardProps) {
   const { data, loading, error, retrying, retry } = useSandboxStatus(orgId);
 
   if (loading) {
@@ -84,17 +88,55 @@ export function SandboxStatusCard({ orgId }: SandboxStatusCardProps) {
     );
   }
 
-  // Estado: ready → "● Ready"
-  if (data.status === 'ready') {
+  // Estado: connected → WhatsApp conectado
+  if (connected) {
     return (
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div className="flex items-start gap-3">
           <div className="text-green-400 text-xl">●</div>
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-white">WhatsApp Sandbox</h3>
+
             <p className="text-sm text-gray-400 mt-1">
-              <span className="text-green-400 font-medium">Ready</span>
+              <span className="text-green-400 font-medium">Connected</span>
             </p>
+
+            <p className="text-sm text-gray-400 mt-2">
+              WhatsApp is connected and ready to test your Agent.
+            </p>
+
+            <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+              <span>Evolution · Sandbox</span>
+              {data.instance_name && (
+                <>
+                  <span>·</span>
+                  <span>{data.instance_name}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado: ready → sandbox provisionado, WhatsApp aún no conectado
+  if (data.status === 'ready') {
+    return (
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div className="flex items-start gap-3">
+          <div className="text-yellow-400 text-xl">●</div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-white">WhatsApp Sandbox</h3>
+
+            <p className="text-sm text-gray-400 mt-1">
+              <span className="text-yellow-400 font-medium">Ready to connect</span>
+            </p>
+
+            <p className="text-sm text-gray-400 mt-2">
+              Your sandbox is provisioned. Connect WhatsApp to start testing your Agent.
+            </p>
+
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
               <span>Evolution · Sandbox</span>
               {data.instance_name && (

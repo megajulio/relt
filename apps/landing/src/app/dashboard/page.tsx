@@ -3,9 +3,17 @@
 import { useAuth } from '@/lib/use-auth';
 import Link from 'next/link';
 import { SandboxStatusCard } from '@/components/dashboard/SandboxStatusCard';
+import { useSandboxQR } from '@/lib/use-sandbox-qr';
 
 export default function DashboardOverviewPage() {
   const auth = useAuth();
+
+  const orgId =
+    auth.status === 'authenticated'
+      ? auth.data.organizations[0]?.id
+      : undefined;
+
+  const { data: sandboxQR } = useSandboxQR(orgId);
 
   if (auth.status !== 'authenticated') {
     return null; // useAuth maneja el loading y la redirección
@@ -14,9 +22,17 @@ export default function DashboardOverviewPage() {
   const { user, organizations } = auth.data;
   const activeOrg = organizations[0];
 
+  const sandboxConnected = sandboxQR?.status === 'connected';
+
   const checklist = [
     { label: 'Create your account', done: true },
-    { label: 'Activate your sandbox', done: false, cta: { href: '/dashboard/sandbox', label: 'View status' } },
+    {
+      label: 'Activate your sandbox',
+      done: sandboxConnected,
+      cta: sandboxConnected
+        ? undefined
+        : { href: '/dashboard/sandbox', label: 'View status' },
+    },
     { label: 'Create your first agent', done: false, cta: { href: '/dashboard/agents', label: 'Create agent' } },
     { label: 'Send your first message', done: false, cta: { href: '/dashboard/quickstart', label: 'Quickstart' } },
   ];
@@ -46,7 +62,10 @@ export default function DashboardOverviewPage() {
       </div>
 
       {/* Sandbox status (H) */}
-      <SandboxStatusCard orgId={activeOrg?.id} />
+      <SandboxStatusCard
+        orgId={activeOrg?.id}
+        connected={sandboxConnected}
+      />
 
       {/* Get started checklist */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">

@@ -513,7 +513,10 @@ function Hero() {
 
 function Pricing() {
   return (
-    <section id="pricing" className="border-t border-white/10 py-24 lg:py-28">
+    <section
+      id="pricing"
+      className="border-t border-white/10 py-24 lg:py-28"
+    >
       <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
         {/* Header */}
         <div className="mx-auto max-w-3xl text-center">
@@ -522,105 +525,154 @@ function Pricing() {
           </p>
 
           <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl">
-          
-            Build your <span className="text-blue-500">Agent. </span>Test it <span className="text-blue-500">Free.</span> {' '}
+            Build your <span className="text-blue-500">Agent.</span>{' '}
+            Test it <span className="text-blue-500">Free.</span>
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-400">
-            Create, test and refine your AI Agent in the RELT sandbox for 10
-            days.
+            Create, test, and refine your AI Agent in the RELT sandbox for 10 days.
           </p>
         </div>
 
-        {/* Trial card */}
-        <div className="mx-auto mt-14 max-w-xl rounded-2xl border border-white/10 bg-slate-950/55 p-8 text-left shadow-[0_0_80px_rgba(37,99,235,0.06)] sm:p-9">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
-              DEVELOPER TRIAL
-            </p>
+        {/* Main pricing area */}
+        <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          {/* Developer Trial */}
+          <div className="relative overflow-hidden rounded-2xl border border-blue-400/30 bg-slate-950/70 p-8 text-left shadow-[0_0_80px_rgba(37,99,235,0.08)] sm:p-9">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl" />
 
-            <span className="rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-blue-300">
-              10 DAYS FREE
-            </span>
-          </div>
+            <div className="relative">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  DEVELOPER TRIAL
+                </p>
 
-          <div className="mt-6">
-            <span className="text-5xl font-semibold text-white">$0</span>
-            <span className="ml-2 text-sm text-slate-500">for 10 days</span>
-          </div>
+                <span className="rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-blue-300">
+                  10 DAYS FREE
+                </span>
+              </div>
 
-          <div className="mt-7 space-y-3 text-sm text-slate-300">
-            <div className="flex items-start gap-3">
-              <span className="w-4 text-xs leading-5 text-emerald-300">✓</span>
-              <span>Agent Runtime</span>
-            </div>
+              <div className="mt-6 flex items-end gap-2">
+                <span className="text-5xl font-semibold tracking-tight text-white">
+                  $0
+                </span>
+                <span className="pb-1 text-sm text-slate-500">
+                  for 10 days
+                </span>
+              </div>
 
-            <div className="flex items-start gap-3">
-              <span className="w-4 text-xs leading-5 text-emerald-300">✓</span>
-              <span>Skills &amp; Tools</span>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <span className="w-4 text-xs leading-5 text-emerald-300">✓</span>
-              <span>Memory &amp; Multimodal</span>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <span className="w-4 text-xs leading-5 text-emerald-300">✓</span>
-              <span>Evolution WhatsApp Sandbox</span>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <span className="w-4 text-xs leading-5 text-emerald-300">✓</span>
-              <span>Execution tracing</span>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <span className="w-4 text-xs leading-5 text-emerald-300">✓</span>
-              <span>Multi-provider foundation</span>
-            </div>
-          </div>
-
-          <div className="mt-7 border-t border-white/10 pt-5">
-            <p className="text-sm leading-6 text-slate-400">
-              No billing during the trial.
-            </p>
-          </div>
-
-          <a
-            href="/register"
-            className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-500"
-          >
-            Start free
-            <span aria-hidden="true">→</span>
-          </a>
-        </div>
-
-        {/* Trial starts at registration + beta provisioning */}
-        <p className="mx-auto mt-6 max-w-xl text-center text-sm leading-6 text-slate-500">
-          Your trial starts when your account is created. During beta, sandbox
-          numbers are provisioned together with the RELT team.
-        </p>
-
-        {/* Production band */}
-        <div className="mx-auto mt-14 max-w-xl rounded-2xl border border-white/10 bg-slate-900/40 p-7 text-left sm:p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-white">
-                Ready for production?
+              <p className="mt-4 max-w-xl text-sm leading-6 text-slate-400">
+                Everything you need to create, test, and refine an AI Agent
+                before taking it to production.
               </p>
-              <p className="mt-1 text-sm leading-6 text-slate-400">
-                Connect Meta Cloud API and keep the Agent you built.
+
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                {[
+                  'Agent Runtime',
+                  'Skills & Tools',
+                  'Memory',
+                  'Multimodal agents',
+                  'WhatsApp sandbox',
+                  'Execution tracing',
+                ].map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-center gap-3 text-sm text-slate-300"
+                  >
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-xs text-emerald-300">
+                      ✓
+                    </span>
+
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-7 border-t border-white/10 pt-5">
+                <p className="text-sm leading-6 text-slate-500">
+                  No billing during the trial. No credit card required.
+                </p>
+              </div>
+
+              <a
+                href="/register"
+                className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-500"
+              >
+                Start free
+                <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Production */}
+          <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-8 text-left sm:p-9">
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+              PRODUCTION
+            </p>
+
+            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white">
+              Ready for a real WhatsApp number?
+            </h3>
+
+            <p className="mt-4 text-sm leading-6 text-slate-400">
+              Keep the Agent you built in the sandbox and take it to
+              production with Meta when you are ready.
+            </p>
+
+            <div className="mt-8 space-y-4">
+              {[
+                'Keep the same Agent',
+                'Connect a real WhatsApp number',
+                'Production infrastructure',
+                'Usage-based plans as RELT evolves',
+              ].map((feature) => (
+                <div
+                  key={feature}
+                  className="flex items-start gap-3 text-sm text-slate-300"
+                >
+                  <span className="mt-0.5 text-blue-400">✓</span>
+                  <span>{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.02] p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Production plans
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Production pricing will evolve as RELT expands.
               </p>
             </div>
 
             <a
               href="#connect"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-300 transition-colors hover:text-blue-200"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-300 transition-colors hover:text-blue-200"
             >
-              See how
+              See how it works
               <span aria-hidden="true">→</span>
             </a>
+          </div>
+        </div>
+
+        {/* Bottom message */}
+        <div className="mx-auto mt-8 max-w-5xl rounded-xl border border-white/10 bg-slate-900/40 px-6 py-5">
+          <div className="flex flex-col items-center justify-center gap-2 text-center sm:flex-row sm:gap-3">
+            <span className="text-sm font-medium text-white">
+              Build once.
+            </span>
+
+            <span className="hidden text-slate-700 sm:inline">•</span>
+
+            <span className="text-sm text-slate-400">
+              Test in the sandbox.
+            </span>
+
+            <span className="hidden text-slate-700 sm:inline">•</span>
+
+            <span className="text-sm text-slate-400">
+              Take your Agent to production.
+            </span>
           </div>
         </div>
       </div>
