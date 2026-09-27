@@ -63,6 +63,44 @@ export default function SandboxPage() {
           </div>
         )}
 
+        {!loading && !error && data?.status === 'not_provisioned' && (
+          <div className="text-center py-8">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-400/10 text-blue-300">
+              <span className="text-2xl">＋</span>
+            </div>
+
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-blue-300">
+              SANDBOX NOT PROVISIONED
+            </div>
+
+            <h2 className="mt-4 text-xl font-semibold text-white">
+              Your sandbox is not provisioned yet
+            </h2>
+
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-gray-400">
+              Create your first Agent and RELT will automatically provision your
+              WhatsApp sandbox for testing.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="/dashboard/agents/new"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
+              >
+                Create your first Agent
+                <span aria-hidden="true">→</span>
+              </Link>
+
+              <button
+                onClick={refresh}
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-gray-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+              >
+                Check again
+              </button>
+            </div>
+          </div>
+        )}
+
         {!loading && !error && data?.status === 'connected' && (
           <div className="text-center py-8">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">

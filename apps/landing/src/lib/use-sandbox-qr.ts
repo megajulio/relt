@@ -9,6 +9,7 @@ export interface SandboxQR {
     | 'available'
     | 'connected'
     | 'no_qr_available'
+    | 'not_provisioned'
     | 'error';
 
   message?: string;
@@ -55,6 +56,18 @@ export function useSandboxQR(
 
         setData(result);
       } catch (err) {
+        const status = (err as Error & { status?: number }).status;
+
+        if (status === 404) {
+          setData({
+            status: 'not_provisioned',
+            message:
+              'Your sandbox is not provisioned yet. Create your first Agent to automatically provision your WhatsApp sandbox.',
+          });
+          setError(null);
+          return;
+        }
+
         setError((err as Error).message);
       } finally {
         if (showLoading) {
