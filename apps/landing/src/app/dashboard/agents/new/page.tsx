@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/lib/use-auth';
+import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { createAgent, type CreateAgentInput } from '@/lib/agents';
 
 const inputCls =
@@ -13,7 +13,7 @@ const labelCls = 'block text-sm font-medium text-gray-400 mb-1';
 
 export default function CreateAgentPage() {
   const router = useRouter();
-  const auth = useAuth();
+  useDashboardAuth();
 
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
@@ -26,10 +26,6 @@ export default function CreateAgentPage() {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (auth.status !== 'authenticated') {
-    return null;
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

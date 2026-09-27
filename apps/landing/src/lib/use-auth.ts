@@ -7,12 +7,14 @@ import { getMe, logout as doLogout, type MeResponse } from './auth';
 type AuthState =
   | { status: 'loading' }
   | { status: 'authenticated'; data: MeResponse }
-  | { status: 'unauthenticated' };
+  | { status: 'unauthenticated' }
+  | { status: 'error'; error: Error };
 
 export type UseAuthResult =
   | { status: 'loading'; logout: () => Promise<void> }
   | { status: 'authenticated'; data: MeResponse; logout: () => Promise<void> }
-  | { status: 'unauthenticated'; logout: () => Promise<void> };
+  | { status: 'unauthenticated'; logout: () => Promise<void> }
+  | { status: 'error'; error: Error; logout: () => Promise<void> };
 
 export function useAuth(redirectToLogin = true): UseAuthResult {
   const router = useRouter();
@@ -23,15 +25,30 @@ export function useAuth(redirectToLogin = true): UseAuthResult {
 
     getMe()
       .then((data) => {
-        if (!cancelled) setState({ status: 'authenticated', data });
-      })
-      .catch(() => {
         if (!cancelled) {
+          setState({ status: 'authenticated', data });
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+
+        const status = (err as Error & { status?: number }).status;
+
+        if (status === 401) {
           setState({ status: 'unauthenticated' });
+
           if (redirectToLogin) {
             router.replace('/login');
           }
+
+          return;
         }
+
+        // 429/5xx no significan que la sesión sea inválida.
+        setState({
+          status: 'error',
+          error: err instanceof Error ? err : new Error('Authentication request failed'),
+        });
       });
 
     return () => {
@@ -45,6 +62,7 @@ export function useAuth(redirectToLogin = true): UseAuthResult {
     } catch {
       // ignorar errores al limpiar sesión
     }
+
     setState({ status: 'unauthenticated' });
     router.replace('/login');
   }

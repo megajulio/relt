@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/lib/use-auth';
+import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { api } from '@/lib/api';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -160,7 +160,7 @@ function rangeToISO(range: string): { from: string | null; to: string | null } {
 }
 
 export default function ActivityPage() {
-  const auth = useAuth();
+  useDashboardAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -209,11 +209,6 @@ export default function ActivityPage() {
   };
 
   useEffect(() => {
-    if (auth.status !== 'authenticated') {
-      setLoading(false);
-      return;
-    }
-
     const fetchActivity = async () => {
       setLoading(true);
       setError(null);
@@ -231,7 +226,7 @@ export default function ActivityPage() {
 
     fetchActivity();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth.status, eventType, status, range, searchParam, reloadKey]);
+  }, [eventType, status, range, searchParam, reloadKey]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -276,7 +271,6 @@ export default function ActivityPage() {
     [eventType, status, range, searchParam]
   );
 
-  if (auth.status !== 'authenticated') return null;
 
   return (
     <div className="max-w-6xl space-y-6">

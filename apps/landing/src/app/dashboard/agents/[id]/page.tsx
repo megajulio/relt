@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/lib/use-auth';
+import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { getAgent, type AgentDetail } from '@/lib/agents';
 import AgentConfigForm from '@/components/agent-config-form';
 import AgentSkillsForm from '@/components/agent-skills-form';
@@ -56,22 +56,22 @@ function Chip({ children }: { children: React.ReactNode }) {
 export default function AgentDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const auth = useAuth();
+  useDashboardAuth();
   const [agent, setAgent] = useState<AgentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('General');
 
   useEffect(() => {
-    if (auth.status !== 'authenticated' || !id) return;
+    if (!id) return;
     setLoading(true);
+    setError(null);
+
     getAgent(id)
       .then(setAgent)
       .catch((err) => setError(err.message || 'Error loading agent'))
       .finally(() => setLoading(false));
-  }, [auth.status, id]);
-
-  if (auth.status !== 'authenticated') return null;
+  }, [id]);
 
   return (
     <div className="max-w-4xl space-y-6">

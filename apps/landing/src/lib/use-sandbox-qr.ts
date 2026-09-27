@@ -1,3 +1,4 @@
+import { api } from './api';
 import { useCallback, useEffect, useState } from 'react';
 
 export interface SandboxQR {
@@ -42,22 +43,15 @@ export function useSandboxQR(
 
         setError(null);
 
-        const response = await fetch('/api/control/sandbox/qr', {
-          headers: {
-            'X-Org-Id': orgId,
+        const result = await api.request<SandboxQR>(
+          '/control/v1/sandbox/qr',
+          {
+            headers: {
+              'X-Org-Id': orgId,
+            },
+            cache: 'no-store',
           },
-          cache: 'no-store',
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            result.detail ||
-              result.error ||
-              `Failed to fetch sandbox QR: ${response.status}`,
-          );
-        }
+        );
 
         setData(result);
       } catch (err) {

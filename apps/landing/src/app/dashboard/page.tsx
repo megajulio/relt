@@ -1,25 +1,18 @@
 'use client';
 
-import { useAuth } from '@/lib/use-auth';
+import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import Link from 'next/link';
 import { SandboxStatusCard } from '@/components/dashboard/SandboxStatusCard';
 import { useSandboxQR } from '@/lib/use-sandbox-qr';
 
 export default function DashboardOverviewPage() {
-  const auth = useAuth();
+  const { data } = useDashboardAuth();
 
-  const orgId =
-    auth.status === 'authenticated'
-      ? auth.data.organizations[0]?.id
-      : undefined;
+  const orgId = data.organizations[0]?.id;
 
   const { data: sandboxQR } = useSandboxQR(orgId);
 
-  if (auth.status !== 'authenticated') {
-    return null; // useAuth maneja el loading y la redirección
-  }
-
-  const { user, organizations } = auth.data;
+  const { user, organizations } = data;
   const activeOrg = organizations[0];
 
   const sandboxConnected = sandboxQR?.status === 'connected';

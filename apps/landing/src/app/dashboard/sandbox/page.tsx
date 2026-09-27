@@ -1,24 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@/lib/use-auth';
+import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { useSandboxQR } from '@/lib/use-sandbox-qr';
 
 export default function SandboxPage() {
-  const auth = useAuth();
+  const { data: authData } = useDashboardAuth();
 
-  const orgId =
-    auth.status === 'authenticated'
-      ? auth.data.organizations[0]?.id
-      : undefined;
+  const orgId = authData.organizations[0]?.id;
 
   const { data, loading, error, refresh } = useSandboxQR(orgId);
-
-  if (auth.status !== 'authenticated') {
-    return null;
-  }
-
-  const activeOrg = auth.data.organizations[0];
 
   return (
     <div className="max-w-3xl space-y-6">

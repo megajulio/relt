@@ -1,3 +1,4 @@
+import { api } from './api';
 import { useState, useEffect, useCallback } from 'react';
 
 export interface SandboxStatus {
@@ -44,17 +45,15 @@ export function useSandboxStatus(orgId: string | undefined): UseSandboxStatusRes
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/control/sandbox/status', {
-        headers: {
-          'X-Org-Id': orgId,
+      const result = await api.request<SandboxStatus>(
+        '/control/v1/sandbox/status',
+        {
+          headers: {
+            'X-Org-Id': orgId,
+          },
         },
-      });
+      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch sandbox status: ${response.status}`);
-      }
-
-      const result = await response.json();
       setData(result);
     } catch (err) {
       setError((err as Error).message);
@@ -70,20 +69,16 @@ export function useSandboxStatus(orgId: string | undefined): UseSandboxStatusRes
       setRetrying(true);
       setError(null);
 
-      const response = await fetch('/api/control/sandbox/retry', {
-        method: 'POST',
-        headers: {
-          'X-Org-Id': orgId,
-          'Content-Type': 'application/json',
+      const result = await api.request<SandboxStatus>(
+        '/control/v1/sandbox/retry',
+        {
+          method: 'POST',
+          headers: {
+            'X-Org-Id': orgId,
+            'Content-Type': 'application/json',
+          },
         },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `Retry failed: ${response.status}`);
-      }
-
-      const result = await response.json();
+      );
       setData({
         ...data,
         ...result,

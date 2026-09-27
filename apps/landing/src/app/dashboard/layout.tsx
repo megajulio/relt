@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/use-auth';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { DashboardAuthProvider } from '@/components/dashboard/DashboardAuthProvider';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Overview', exact: true },
@@ -29,12 +30,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return null; // useAuth ya redirigió a /login
   }
 
+  if (auth.status === 'error') {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
+        <div className="max-w-md rounded-xl border border-red-500/20 bg-gray-900 p-6 text-center">
+          <h1 className="text-lg font-semibold text-white">
+            Unable to load your session
+          </h1>
+          <p className="mt-2 text-sm text-gray-400">
+            {auth.error.message}
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Después de los guards, TypeScript sabe que auth.status === 'authenticated'
   const { user, organizations } = auth.data;
   const activeOrg = organizations[0];
 
   return (
-    <div className="min-h-screen bg-gray-950 flex">
+    <DashboardAuthProvider
+      data={auth.data}
+      logout={auth.logout}
+    >
+      <div className="min-h-screen bg-gray-950 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
         <div className="p-6 border-b border-gray-800">
@@ -96,5 +123,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 p-8">{children}</main>
       </div>
     </div>
+    </DashboardAuthProvider>
   );
 }

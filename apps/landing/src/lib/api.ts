@@ -32,7 +32,14 @@ async function request<T>(
     } catch {
       error = { detail: 'Error de red', status: response.status };
     }
-    throw new Error(error.detail || `HTTP ${response.status}`);
+
+    const requestError = new Error(
+      error.detail || `HTTP ${response.status}`,
+    ) as Error & { status?: number };
+
+    requestError.status = response.status;
+
+    throw requestError;
   }
 
   // 204 No Content / 205 Reset Content no tienen body

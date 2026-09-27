@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/lib/use-auth';
+import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import Link from 'next/link';
 import { listAgents, type Agent } from '@/lib/agents';
 
@@ -12,23 +12,18 @@ const STATUS_STYLES: Record<Agent['status'], string> = {
 };
 
 export default function AgentsPage() {
-  const auth = useAuth();
+  useDashboardAuth();
+
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (auth.status !== 'authenticated') return;
-
     listAgents()
       .then(setAgents)
       .catch((err) => setError(err.message || 'Error loading agents'))
       .finally(() => setLoading(false));
-  }, [auth.status]);
-
-  if (auth.status !== 'authenticated') {
-    return null;
-  }
+  }, []);
 
   return (
     <div className="max-w-5xl space-y-6">
