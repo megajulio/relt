@@ -158,7 +158,7 @@ export default function SandboxPage() {
         )}
 
         {!connectionLoading &&
-          connection?.state === 'qr_required' &&
+          (connection?.state === 'qr_required' || connection?.state === 'connecting') &&
           !error &&
           data?.qr_base64 && (
           <div className="text-center">
