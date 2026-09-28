@@ -41,7 +41,7 @@ export function useSandboxConnection(
       setError(null);
 
       const result = await api.request<SandboxConnection>(
-        '/api/control/sandbox/connection',
+        '/control/v1/sandbox/connection',
         {
           headers: {
             'X-Org-Id': orgId,
