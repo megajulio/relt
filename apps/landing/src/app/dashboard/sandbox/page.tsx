@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { useSandboxQR } from '@/lib/use-sandbox-qr';
+import { useSandboxConnection } from '@/lib/use-sandbox-connection';
 
 export default function SandboxPage() {
   const { data: authData } = useDashboardAuth();
@@ -10,6 +11,12 @@ export default function SandboxPage() {
   const orgId = authData.organizations[0]?.id;
 
   const { data, loading, error, refresh } = useSandboxQR(orgId);
+  const {
+    data: connection,
+    loading: connectionLoading,
+    error: connectionError,
+    refresh: refreshConnection,
+  } = useSandboxConnection(orgId);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -101,7 +108,7 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {!loading && !error && data?.status === 'connected' && (
+        {!connectionLoading && connection?.state === 'connected' && (
           <div className="text-center py-8">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">
               <span className="text-2xl">✓</span>
@@ -120,13 +127,13 @@ export default function SandboxPage() {
               Your WhatsApp account is connected and ready to test your Agent.
             </p>
 
-            {data.instance_name && (
+            {connection.instance_name && (
               <div className="mt-5 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-left">
                 <p className="text-xs uppercase tracking-[0.14em] text-gray-500">
                   Sandbox instance
                 </p>
                 <p className="mt-1 font-mono text-sm text-gray-300 break-all">
-                  {data.instance_name}
+                  {connection.instance_name}
                 </p>
               </div>
             )}
@@ -150,7 +157,10 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {!loading && !error && data?.qr_base64 && (
+        {!connectionLoading &&
+          connection?.state === 'qr_required' &&
+          !error &&
+          data?.qr_base64 && (
           <div className="text-center">
             <div className="inline-flex items-center gap-2 text-green-400 text-sm font-medium mb-4">
               <span>●</span>
@@ -180,9 +190,9 @@ export default function SandboxPage() {
               </p>
             )}
 
-            {data.instance_name && (
+            {connection.instance_name && (
               <p className="text-xs text-gray-600 mt-2 font-mono">
-                {data.instance_name}
+                {connection.instance_name}
               </p>
             )}
 
@@ -191,6 +201,38 @@ export default function SandboxPage() {
               className="mt-5 text-sm text-blue-400 hover:text-blue-300 font-medium"
             >
               Refresh QR
+            </button>
+          </div>
+        )}
+
+        {!connectionLoading &&
+          !connectionError &&
+          connection?.state === 'disconnected' && (
+          <div className="text-center py-8">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-yellow-400/10 text-yellow-300">
+              <span className="text-2xl">!</span>
+            </div>
+
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-yellow-400/20 bg-yellow-400/10 px-3 py-1 text-xs font-semibold text-yellow-300">
+              WHATSAPP DISCONNECTED
+            </div>
+
+            <h2 className="mt-4 text-xl font-semibold text-white">
+              WhatsApp is disconnected
+            </h2>
+
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-gray-400">
+              Your sandbox is still active. Reconnect WhatsApp to continue testing your Agent.
+            </p>
+
+            <button
+              onClick={async () => {
+                await refresh();
+                await refreshConnection();
+              }}
+              className="mt-6 inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
+            >
+              Reconnect WhatsApp
             </button>
           </div>
         )}

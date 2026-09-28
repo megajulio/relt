@@ -3,19 +3,19 @@
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import Link from 'next/link';
 import { SandboxStatusCard } from '@/components/dashboard/SandboxStatusCard';
-import { useSandboxQR } from '@/lib/use-sandbox-qr';
+import { useSandboxConnection } from '@/lib/use-sandbox-connection';
 
 export default function DashboardOverviewPage() {
   const { data } = useDashboardAuth();
 
   const orgId = data.organizations[0]?.id;
 
-  const { data: sandboxQR } = useSandboxQR(orgId);
+  const { data: sandboxConnection } = useSandboxConnection(orgId);
 
   const { user, organizations } = data;
   const activeOrg = organizations[0];
 
-  const sandboxConnected = sandboxQR?.status === 'connected';
+  const sandboxConnected = sandboxConnection?.state === 'connected';
 
   const checklist = [
     { label: 'Create your account', done: true },
