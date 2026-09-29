@@ -256,6 +256,23 @@ export async function updateAgentStatus(
 
 // --- I: Create + UpdateStatus ---
 
+export interface UpdateAgentInput {
+  name?: string;
+  defaultSkill?: string;
+  config?: AgentConfig;
+}
+
+export async function updateAgent(
+  id: string,
+  input: UpdateAgentInput,
+): Promise<Agent> {
+  const response = await api.request<BackendAgent>(`/control/v1/agents/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+  return toAgent(response);
+}
+
 export interface CreateAgentInput {
   key: string;
   name: string;

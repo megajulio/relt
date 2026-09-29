@@ -11,47 +11,11 @@ import AgentToolsForm from '@/components/agent-tools-form';
 import AgentMemoryForm from '@/components/agent-memory-form';
 import AgentChannelsForm from '@/components/agent-channels-form';
 import AgentStatusControl from '@/components/agent-status-control';
+import AgentGeneralForm from '@/components/agent-general-form';
 
 const TABS = ['General', 'Configuration', 'Skills', 'Tools', 'Channels', 'Memory'] as const;
 type Tab = (typeof TABS)[number];
 
-const STATUS_STYLES: Record<string, string> = {
-  active: 'bg-green-500/20 text-green-400 border border-green-500/30',
-  paused: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
-  archived: 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
-};
-
-function Row({ label, value }: { label: string; value?: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-6 py-3 border-b border-gray-800 last:border-0">
-      <div className="text-sm text-gray-500 shrink-0">{label}</div>
-      <div className="text-sm text-gray-200 text-right break-all">
-        {value === undefined || value === null || value === '' ? '—' : value}
-      </div>
-    </div>
-  );
-}
-
-function BoolBadge({ value }: { value?: boolean }) {
-  if (value === undefined) return <>—</>;
-  return (
-    <span
-      className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
-        value ? 'bg-green-500/20 text-green-400' : 'bg-gray-700/50 text-gray-400'
-      }`}
-    >
-      {value ? 'ON' : 'OFF'}
-    </span>
-  );
-}
-
-function Chip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-block px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20 text-xs font-mono">
-      {children}
-    </span>
-  );
-}
 
 export default function AgentDetailPage() {
   const params = useParams();
@@ -123,14 +87,7 @@ export default function AgentDetailPage() {
           {/* Tab content */}
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             {tab === 'General' && (
-              <div>
-                <Row label="Name" value={agent.name} />
-                <Row label="Key" value={<span className="font-mono">{agent.key}</span>} />
-                <Row label="Status" value={<span className="capitalize">{agent.status}</span>} />
-                <Row label="Default skill" value={agent.defaultSkill} />
-                <Row label="Created" value={new Date(agent.createdAt).toLocaleString()} />
-                <Row label="Updated" value={new Date(agent.updatedAt).toLocaleString()} />
-              </div>
+              <AgentGeneralForm agent={agent} onSaved={setAgent} />
             )}
 
             {tab === 'Configuration' && (
