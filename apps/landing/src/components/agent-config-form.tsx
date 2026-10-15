@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { getAgent, patchAgentConfig, type AgentConfigPatch, type AgentDetail } from '@/lib/agents';
 
 const inputCls =
@@ -19,7 +19,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export default function AgentConfigForm({
+function AgentConfigFormContent({
   agent,
   onSaved,
 }: {
@@ -27,40 +27,21 @@ export default function AgentConfigForm({
   onSaved: (a: AgentDetail) => void;
 }) {
   const [maxSteps, setMaxSteps] = useState<string>(String(agent.config.maxSteps ?? ''));
-  const [modelStrategy, setModelStrategy] = useState<string>(agent.config.modelStrategy ?? 'single');
-  const [reasoningModel, setReasoningModel] = useState(agent.config.reasoningModel ?? '');
-  const [responseModel, setResponseModel] = useState(agent.config.responseModel ?? '');
   const [tone, setTone] = useState<string>(agent.config.tone ?? 'neutral');
   const [systemPrompt, setSystemPrompt] = useState(agent.config.systemPrompt ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  // Resincronizar el form cuando el agent cambia (refetch post-save)
-  useEffect(() => {
-    setMaxSteps(String(agent.config.maxSteps ?? ''));
-    setModelStrategy(agent.config.modelStrategy ?? 'single');
-    setReasoningModel(agent.config.reasoningModel ?? '');
-    setResponseModel(agent.config.responseModel ?? '');
-    setTone(agent.config.tone ?? 'neutral');
-    setSystemPrompt(agent.config.systemPrompt ?? '');
-    setError(null);
-  }, [agent.id, agent.updatedAt]);
 
   const original = {
     maxSteps: String(agent.config.maxSteps ?? ''),
-    modelStrategy: agent.config.modelStrategy ?? 'single',
-    reasoningModel: agent.config.reasoningModel ?? '',
-    responseModel: agent.config.responseModel ?? '',
     tone: agent.config.tone ?? 'neutral',
     systemPrompt: agent.config.systemPrompt ?? '',
   };
 
   const dirty =
     maxSteps !== original.maxSteps ||
-    modelStrategy !== original.modelStrategy ||
-    reasoningModel !== original.reasoningModel ||
-    responseModel !== original.responseModel ||
     tone !== original.tone ||
     systemPrompt !== original.systemPrompt;
 
@@ -73,11 +54,6 @@ export default function AgentConfigForm({
     if (maxSteps !== original.maxSteps) {
       patch.maxSteps = maxSteps === '' ? null : Number(maxSteps);
     }
-    if (modelStrategy !== original.modelStrategy) {
-      patch.modelStrategy = modelStrategy as 'dual' | 'single';
-    }
-    if (reasoningModel !== original.reasoningModel) patch.reasoningModel = reasoningModel;
-    if (responseModel !== original.responseModel) patch.responseModel = responseModel;
     if (tone !== original.tone) patch.tone = tone as AgentConfigPatch['tone'];
     if (systemPrompt !== original.systemPrompt) patch.systemPrompt = systemPrompt;
 
@@ -90,8 +66,8 @@ export default function AgentConfigForm({
       const fresh = await getAgent(agent.id);
       onSaved(fresh);
       setSaved(true);
-    } catch (err: any) {
-      setError(err?.message || 'Error al guardar la configuración');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar la configuración');
     } finally {
       setSaving(false);
     }
@@ -99,9 +75,6 @@ export default function AgentConfigForm({
 
   function handleReset() {
     setMaxSteps(original.maxSteps);
-    setModelStrategy(original.modelStrategy);
-    setReasoningModel(original.reasoningModel);
-    setResponseModel(original.responseModel);
     setTone(original.tone);
     setSystemPrompt(original.systemPrompt);
     setError(null);
@@ -130,33 +103,22 @@ export default function AgentConfigForm({
             onChange={(e) => setMaxSteps(e.target.value)}
           />
         </Field>
-        <Field label="Model strategy">
-          <select className={inputCls} value={modelStrategy} onChange={(e) => setModelStrategy(e.target.value)}>
-            {STRATEGIES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Reasoning model" hint="Aplica cuando strategy = dual">
-          <input
-            type="text"
-            className={inputCls}
-            value={reasoningModel}
-            onChange={(e) => setReasoningModel(e.target.value)}
-            placeholder="ej: openai/o3-mini"
-          />
-        </Field>
-        <Field label="Response model">
-          <input
-            type="text"
-            className={inputCls}
-            value={responseModel}
-            onChange={(e) => setResponseModel(e.target.value)}
-            placeholder="ej: openai/gpt-4o-mini"
-          />
-        </Field>
+          <Field label="Model strategy">
+            <select className={inputCls} value={agent.config.modelStrategy ?? 'single'} disabled>
+              {STRATEGIES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Selected automatically by ModelStrategy</p>
+          </Field>
+          <Field label="Reasoning model" hint="Aplica cuando strategy = dual">
+            <input type="text" className={inputCls} value={agent.config.reasoningModel ?? ''} disabled placeholder="lo elige ModelStrategy" />
+            <p className="text-xs text-gray-500 mt-1">Selected automatically by ModelStrategy</p>
+          </Field>
+          <Field label="Response model">
+            <input type="text" className={inputCls} value={agent.config.responseModel ?? ''} disabled placeholder="lo elige ModelStrategy" />
+            <p className="text-xs text-gray-500 mt-1">Selected automatically by ModelStrategy</p>
+          </Field>
         <Field label="Tone">
           <select className={inputCls} value={tone} onChange={(e) => setTone(e.target.value)}>
             {TONES.map((t) => (
@@ -201,4 +163,11 @@ export default function AgentConfigForm({
       </p>
     </div>
   );
+}
+
+export default function AgentConfigForm(props: {
+  agent: AgentDetail;
+  onSaved: (a: AgentDetail) => void;
+}) {
+  return <AgentConfigFormContent key={props.agent.id + ':' + props.agent.updatedAt} {...props} />;
 }
