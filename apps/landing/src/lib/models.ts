@@ -66,11 +66,24 @@ export function modelOptionValues(options: ModelCatalogItem[], current: string):
 export type ModelErrorTarget = 'reasoningModel' | 'responseModel' | null;
 
 /**
+ * Extrae el campo desde el `detail` del backend, que nombra el campo
+ * (p.ej. "...validation failed for responseModel: ...") sin exponer `field`.
+ */
+function fieldFromDetail(detail?: string): ModelErrorTarget {
+  if (!detail) return null;
+  if (detail.includes('reasoningModel')) return 'reasoningModel';
+  if (detail.includes('responseModel')) return 'responseModel';
+  return null;
+}
+
+/**
  * Determina qué campo de modelo marcar según el `code` del 400:
- * - `model_not_approved`: el campo enviado en el PATCH cuyo valor no pertenece
- *   al catálogo (`id ∪ aliases`).
+ * - `model_not_approved`: el campo nombrado en `detail` (robusto ante un
+ *   catálogo desactualizado en pantalla); si el `detail` no lo nombra, cae al
+ *   campo enviado cuyo valor no pertenece al catálogo (`id ∪ aliases`).
  * - `model_tools_unsupported`: el campo del loop (`responseModel` en single,
  *   `reasoningModel` en dual).
+ * - `incomplete`: el campo nombrado en `detail` (el backend lo incluye).
  * - otros códigos: ninguno.
  */
 export function resolveModelErrorField(
@@ -78,8 +91,11 @@ export function resolveModelErrorField(
   sent: { reasoningModel?: string | null; responseModel?: string | null },
   strategy: 'auto' | 'single' | 'dual',
   models: ModelCatalogItem[],
+  detail?: string,
 ): ModelErrorTarget {
   if (code === 'model_not_approved') {
+    const fromDetail = fieldFromDetail(detail);
+    if (fromDetail) return fromDetail;
     if (
       typeof sent.reasoningModel === 'string' &&
       sent.reasoningModel &&
@@ -101,6 +117,10 @@ export function resolveModelErrorField(
     if (strategy === 'single') return 'responseModel';
     if (strategy === 'dual') return 'reasoningModel';
     return null;
+  }
+
+  if (code === 'incomplete') {
+    return fieldFromDetail(detail);
   }
 
   return null;

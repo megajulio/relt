@@ -7,7 +7,7 @@ import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { createAgent, type CreateAgentInput } from '@/lib/agents';
 import { listSkills, type SkillListItem } from '@/lib/skills';
 import { buildCreateModelConfig, type ModelStrategyChoice } from '@/lib/model-selection';
-import { listModels, optionsForField, type ModelCatalogItem } from '@/lib/models';
+import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem } from '@/lib/models';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -28,6 +28,7 @@ export default function CreateAgentPage() {
   const [responseModel, setResponseModel] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<'reasoningModel' | 'responseModel' | null>(null);
   const [skills, setSkills] = useState<SkillListItem[]>([]);
   const [skillsLoading, setSkillsLoading] = useState(true);
   const [skillsError, setSkillsError] = useState<string | null>(null);
@@ -82,11 +83,14 @@ export default function CreateAgentPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setErrorField(null);
 
     if (!name.trim() || !key.trim()) {
       setError('Name and key are required');
       return;
     }
+
+    const modelConfig = buildCreateModelConfig({ strategy, reasoningModel, responseModel });
 
     setSaving(true);
 
@@ -98,14 +102,17 @@ export default function CreateAgentPage() {
         status,
         config: {
           systemPrompt: systemPrompt || undefined,
-          ...buildCreateModelConfig({ strategy, reasoningModel, responseModel }),
+          ...modelConfig,
         },
       };
 
       const agent = await createAgent(input);
       router.push(`/dashboard/agents/${agent.id}`);
     } catch (err) {
-      setError((err as Error).message || 'Failed to create agent');
+      const message = err instanceof Error ? err.message : 'Failed to create agent';
+      setError(message);
+      const code = (err as { code?: string } | undefined)?.code;
+      setErrorField(resolveModelErrorField(code, modelConfig, strategy, models, message));
     } finally {
       setSaving(false);
     }
@@ -234,6 +241,7 @@ export default function CreateAgentPage() {
             <label className={labelCls}>Reasoning Model</label>
             <select
               aria-label="Reasoning model"
+              aria-invalid={errorField === 'reasoningModel'}
               value={reasoningModel}
               onChange={(e) => setReasoningModel(e.target.value)}
               className={inputCls}
@@ -255,6 +263,7 @@ export default function CreateAgentPage() {
             <label className={labelCls}>Response Model</label>
             <select
               aria-label="Response model"
+              aria-invalid={errorField === 'responseModel'}
               value={responseModel}
               onChange={(e) => setResponseModel(e.target.value)}
               className={inputCls}

@@ -114,7 +114,9 @@ function AgentConfigFormContent({
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al guardar la configuración');
       const code = (err as { code?: string } | undefined)?.code;
-      setErrorField(resolveModelErrorField(code, patch, strategy, models));
+      setErrorField(
+        resolveModelErrorField(code, patch, strategy, models, err instanceof Error ? err.message : undefined),
+      );
     } finally {
       setSaving(false);
     }
