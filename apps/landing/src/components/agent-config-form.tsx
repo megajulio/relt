@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getAgent, patchAgentConfig, type AgentConfigPatch, type AgentDetail } from '@/lib/agents';
 import {
   buildModelPatch,
   selectionFromConfig,
   type ModelStrategyChoice,
 } from '@/lib/model-selection';
+import { listModels, optionsForField, type ModelCatalogItem } from '@/lib/models';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -40,6 +41,25 @@ function AgentConfigFormContent({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [models, setModels] = useState<ModelCatalogItem[]>([]);
+
+  const hasTools = (agent.config.toolBindings?.length ?? 0) > 0;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listModels()
+      .then((items) => {
+        if (!cancelled) setModels(items);
+      })
+      .catch(() => {
+        if (!cancelled) setModels([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
 
   const originalModel = selectionFromConfig(agent.config);
@@ -136,26 +156,36 @@ function AgentConfigFormContent({
         </Field>
         {strategy === 'dual' && (
           <Field label="Reasoning model" hint="Aplica cuando strategy = dual">
-            <input
+            <select
               aria-label="Reasoning model"
-              type="text"
               className={inputCls}
               value={reasoningModel}
               onChange={(e) => setReasoningModel(e.target.value)}
-              placeholder="ej: openai/o3-mini"
-            />
+            >
+              <option value="">Seleccioná un modelo…</option>
+              {optionsForField(models, 'dual', 'reasoningModel', hasTools).map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.id}
+                </option>
+              ))}
+            </select>
           </Field>
         )}
         {strategy !== 'auto' && (
           <Field label="Response model">
-            <input
+            <select
               aria-label="Response model"
-              type="text"
               className={inputCls}
               value={responseModel}
               onChange={(e) => setResponseModel(e.target.value)}
-              placeholder="ej: openai/gpt-4o-mini"
-            />
+            >
+              <option value="">Seleccioná un modelo…</option>
+              {optionsForField(models, strategy, 'responseModel', hasTools).map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.id}
+                </option>
+              ))}
+            </select>
           </Field>
         )}
         <Field label="Tone">

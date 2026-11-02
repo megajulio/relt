@@ -40,10 +40,10 @@ describe('U1 · create page · campos de modelo rehabilitados', () => {
     // Al elegir dual se revelan los controles de modelo, habilitados
     fireEvent.change(strategy, { target: { value: 'dual' } });
 
-    const reasoning = screen.getByRole('textbox', { name: 'Reasoning model' }) as HTMLInputElement;
+    const reasoning = screen.getByLabelText('Reasoning model') as HTMLInputElement | HTMLSelectElement;
     expect(reasoning.disabled).toBe(false);
 
-    const response = screen.getByRole('textbox', { name: 'Response model' }) as HTMLInputElement;
+    const response = screen.getByLabelText('Response model') as HTMLInputElement | HTMLSelectElement;
     expect(response.disabled).toBe(false);
   });
 });
