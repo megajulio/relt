@@ -50,6 +50,50 @@ export function isModelInCatalog(models: ModelCatalogItem[], value: string): boo
   return models.some((m) => m.id === value || m.aliases.includes(value));
 }
 
+/** Campo de modelo que debe marcarse ante un error del backend. */
+export type ModelErrorTarget = 'reasoningModel' | 'responseModel' | null;
+
+/**
+ * Determina qué campo de modelo marcar según el `code` del 400:
+ * - `model_not_approved`: el campo enviado en el PATCH cuyo valor no pertenece
+ *   al catálogo (`id ∪ aliases`).
+ * - `model_tools_unsupported`: el campo del loop (`responseModel` en single,
+ *   `reasoningModel` en dual).
+ * - otros códigos: ninguno.
+ */
+export function resolveModelErrorField(
+  code: string | undefined,
+  sent: { reasoningModel?: string | null; responseModel?: string | null },
+  strategy: 'auto' | 'single' | 'dual',
+  models: ModelCatalogItem[],
+): ModelErrorTarget {
+  if (code === 'model_not_approved') {
+    if (
+      typeof sent.reasoningModel === 'string' &&
+      sent.reasoningModel &&
+      !isModelInCatalog(models, sent.reasoningModel)
+    ) {
+      return 'reasoningModel';
+    }
+    if (
+      typeof sent.responseModel === 'string' &&
+      sent.responseModel &&
+      !isModelInCatalog(models, sent.responseModel)
+    ) {
+      return 'responseModel';
+    }
+    return null;
+  }
+
+  if (code === 'model_tools_unsupported') {
+    if (strategy === 'single') return 'responseModel';
+    if (strategy === 'dual') return 'reasoningModel';
+    return null;
+  }
+
+  return null;
+}
+
 /**
  * ¿El campo es el "modelo del loop" para la estrategia dada?
  * - single: el loop usa `responseModel`.

@@ -7,7 +7,7 @@ import {
   selectionFromConfig,
   type ModelStrategyChoice,
 } from '@/lib/model-selection';
-import { listModels, optionsForField, type ModelCatalogItem } from '@/lib/models';
+import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem } from '@/lib/models';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -42,6 +42,7 @@ function AgentConfigFormContent({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [models, setModels] = useState<ModelCatalogItem[]>([]);
+  const [errorField, setErrorField] = useState<'reasoningModel' | 'responseModel' | null>(null);
 
   const hasTools = (agent.config.toolBindings?.length ?? 0) > 0;
 
@@ -79,6 +80,7 @@ function AgentConfigFormContent({
 
   async function handleSave() {
     setError(null);
+    setErrorField(null);
     setSaved(false);
 
     // Solo campos modificados (merge semantics del backend)
@@ -104,6 +106,8 @@ function AgentConfigFormContent({
       setSaved(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al guardar la configuración');
+      const code = (err as { code?: string } | undefined)?.code;
+      setErrorField(resolveModelErrorField(code, patch, strategy, models));
     } finally {
       setSaving(false);
     }
@@ -117,6 +121,7 @@ function AgentConfigFormContent({
     setTone(original.tone);
     setSystemPrompt(original.systemPrompt);
     setError(null);
+    setErrorField(null);
     setSaved(false);
   }
 
@@ -158,6 +163,7 @@ function AgentConfigFormContent({
           <Field label="Reasoning model" hint="Aplica cuando strategy = dual">
             <select
               aria-label="Reasoning model"
+              aria-invalid={errorField === 'reasoningModel'}
               className={inputCls}
               value={reasoningModel}
               onChange={(e) => setReasoningModel(e.target.value)}
@@ -175,6 +181,7 @@ function AgentConfigFormContent({
           <Field label="Response model">
             <select
               aria-label="Response model"
+              aria-invalid={errorField === 'responseModel'}
               className={inputCls}
               value={responseModel}
               onChange={(e) => setResponseModel(e.target.value)}

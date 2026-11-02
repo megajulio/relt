@@ -9,6 +9,7 @@ interface ApiError {
   title?: string;
   status?: number;
   detail?: string;
+  code?: string;
   instance?: string;
 }
 
@@ -35,9 +36,12 @@ async function request<T>(
 
     const requestError = new Error(
       error.detail || `HTTP ${response.status}`,
-    ) as Error & { status?: number };
+    ) as Error & { status?: number; code?: string };
 
     requestError.status = response.status;
+    if (typeof error.code === 'string') {
+      requestError.code = error.code;
+    }
 
     throw requestError;
   }
