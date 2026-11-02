@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { createAgent, type CreateAgentInput } from '@/lib/agents';
 import { listSkills, type SkillListItem } from '@/lib/skills';
+import { buildCreateModelConfig, type ModelStrategyChoice } from '@/lib/model-selection';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -21,9 +22,9 @@ export default function CreateAgentPage() {
   const [defaultSkill, setDefaultSkill] = useState('general');
   const [status, setStatus] = useState<'active' | 'paused' | 'archived'>('active');
   const [systemPrompt, setSystemPrompt] = useState('');
-  const [modelStrategy, setModelStrategy] = useState<'dual' | 'single'>('dual');
-  const [reasoningModel, setReasoningModel] = useState('gpt-4o');
-  const [responseModel, setResponseModel] = useState('gpt-4o-mini');
+  const [strategy, setStrategy] = useState<ModelStrategyChoice>('auto');
+  const [reasoningModel, setReasoningModel] = useState('');
+  const [responseModel, setResponseModel] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [skills, setSkills] = useState<SkillListItem[]>([]);
@@ -79,9 +80,7 @@ export default function CreateAgentPage() {
         status,
         config: {
           systemPrompt: systemPrompt || undefined,
-          modelStrategy,
-          reasoningModel: modelStrategy === 'dual' ? reasoningModel : undefined,
-          responseModel,
+          ...buildCreateModelConfig({ strategy, reasoningModel, responseModel }),
         },
       };
 
@@ -199,43 +198,49 @@ export default function CreateAgentPage() {
         <div>
           <label className={labelCls}>Model Strategy</label>
           <select
-            value={modelStrategy}
-            onChange={(e) => setModelStrategy(e.target.value as 'dual' | 'single')}
+            aria-label="Model strategy"
+            value={strategy}
+            onChange={(e) => setStrategy(e.target.value as ModelStrategyChoice)}
             className={inputCls}
             disabled={saving}
           >
-            <option value="dual">Dual (reasoning + response)</option>
+            <option value="auto">Automático (RELT Auto)</option>
             <option value="single">Single model</option>
+            <option value="dual">Dual (reasoning + response)</option>
           </select>
         </div>
 
         {/* Reasoning Model (solo si dual) */}
-        {modelStrategy === 'dual' && (
+        {strategy === 'dual' && (
           <div>
             <label className={labelCls}>Reasoning Model</label>
             <input
+              aria-label="Reasoning model"
               type="text"
               value={reasoningModel}
               onChange={(e) => setReasoningModel(e.target.value)}
-              placeholder="gpt-4o"
+              placeholder="openai/gpt-6-sol"
               className={inputCls}
               disabled={saving}
             />
           </div>
         )}
 
-        {/* Response Model */}
-        <div>
-          <label className={labelCls}>Response Model</label>
-          <input
-            type="text"
-            value={responseModel}
-            onChange={(e) => setResponseModel(e.target.value)}
-            placeholder="gpt-4o-mini"
-            className={inputCls}
-            disabled={saving}
-          />
-        </div>
+        {/* Response Model (single o dual) */}
+        {strategy !== 'auto' && (
+          <div>
+            <label className={labelCls}>Response Model</label>
+            <input
+              aria-label="Response model"
+              type="text"
+              value={responseModel}
+              onChange={(e) => setResponseModel(e.target.value)}
+              placeholder="openai/gpt-4o-mini"
+              className={inputCls}
+              disabled={saving}
+            />
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">

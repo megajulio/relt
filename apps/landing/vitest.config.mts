@@ -14,6 +14,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
+    setupFiles: ['src/__tests__/setup.ts'],
     env: { NEXT_PUBLIC_API_URL: TEST_API_URL },
   },
   define: {

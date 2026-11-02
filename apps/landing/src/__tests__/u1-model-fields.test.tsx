@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/link', () => ({
@@ -33,15 +33,17 @@ describe('U1 · create page · campos de modelo rehabilitados', () => {
     expect(skillSelect).not.toBeNull();
     expect(skillSelect.value).toBe('general');
 
-    // Controles de modelo habilitados
-    const strategyOption = screen.getByRole('option', { name: /dual/i });
-    const strategy = strategyOption.closest('select') as HTMLSelectElement;
+    // Selector de estrategia habilitado
+    const strategy = screen.getByRole('combobox', { name: 'Model strategy' }) as HTMLSelectElement;
     expect(strategy.disabled).toBe(false);
 
-    const reasoning = screen.getByPlaceholderText('gpt-4o') as HTMLInputElement;
+    // Al elegir dual se revelan los controles de modelo, habilitados
+    fireEvent.change(strategy, { target: { value: 'dual' } });
+
+    const reasoning = screen.getByRole('textbox', { name: 'Reasoning model' }) as HTMLInputElement;
     expect(reasoning.disabled).toBe(false);
 
-    const response = screen.getByPlaceholderText('gpt-4o-mini') as HTMLInputElement;
+    const response = screen.getByRole('textbox', { name: 'Response model' }) as HTMLInputElement;
     expect(response.disabled).toBe(false);
   });
 });
