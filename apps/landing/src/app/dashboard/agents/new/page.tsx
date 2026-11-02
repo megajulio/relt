@@ -7,7 +7,7 @@ import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { createAgent, type CreateAgentInput } from '@/lib/agents';
 import { listSkills, type SkillListItem } from '@/lib/skills';
 import { buildCreateModelConfig, type ModelStrategyChoice } from '@/lib/model-selection';
-import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem } from '@/lib/models';
+import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem, type ModelErrorTarget } from '@/lib/models';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -28,7 +28,7 @@ export default function CreateAgentPage() {
   const [responseModel, setResponseModel] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [errorField, setErrorField] = useState<'reasoningModel' | 'responseModel' | null>(null);
+  const [errorField, setErrorField] = useState<ModelErrorTarget>(null);
   const [skills, setSkills] = useState<SkillListItem[]>([]);
   const [skillsLoading, setSkillsLoading] = useState(true);
   const [skillsError, setSkillsError] = useState<string | null>(null);
@@ -111,8 +111,8 @@ export default function CreateAgentPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create agent';
       setError(message);
-      const code = (err as { code?: string } | undefined)?.code;
-      setErrorField(resolveModelErrorField(code, modelConfig, strategy, models, message));
+      const errorInfo = err as { code?: string; field?: string } | undefined;
+      setErrorField(resolveModelErrorField(errorInfo?.code, modelConfig, strategy, models, errorInfo?.field));
     } finally {
       setSaving(false);
     }
@@ -224,6 +224,7 @@ export default function CreateAgentPage() {
           <label className={labelCls}>Model Strategy</label>
           <select
             aria-label="Model strategy"
+            aria-invalid={errorField === 'modelStrategy'}
             value={strategy}
             onChange={(e) => setStrategy(e.target.value as ModelStrategyChoice)}
             className={inputCls}

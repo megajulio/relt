@@ -51,7 +51,7 @@ describe('C · marcado de campo en errores de creación', () => {
     mocks.createAgent.mockRejectedValue(
       Object.assign(
         new Error('Model configuration validation failed for responseModel: model "x" is not approved'),
-        { code: 'model_not_approved' },
+        { code: 'model_not_approved', field: 'responseModel' },
       ),
     );
 
@@ -69,7 +69,7 @@ describe('C · marcado de campo en errores de creación', () => {
     mocks.createAgent.mockRejectedValue(
       Object.assign(
         new Error('Model configuration validation failed for reasoningModel: required by dual strategy'),
-        { code: 'incomplete' },
+        { code: 'incomplete', field: 'reasoningModel' },
       ),
     );
 

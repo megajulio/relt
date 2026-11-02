@@ -45,6 +45,26 @@ function makeAgent(): AgentDetail {
   };
 }
 
+function makeDualAgent(): AgentDetail {
+  return {
+    id: 'agent-u4-dual',
+    organizationId: 'org-1',
+    key: 'agent-u4-dual',
+    name: 'U4 Dual Agent',
+    status: 'active',
+    defaultSkill: 'general',
+    config: {
+      modelStrategy: 'dual',
+      reasoningModel: 'openai/gpt-4o',
+      responseModel: 'openai/gpt-4o-mini',
+      tone: 'neutral',
+    },
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    bindings: [],
+  };
+}
+
 const invalid = (el: HTMLElement) => el.getAttribute('aria-invalid');
 
 describe('U4 · errores visibles en el formulario', () => {
@@ -54,10 +74,11 @@ describe('U4 · errores visibles en el formulario', () => {
     mocks.getAgent.mockResolvedValue(undefined);
   });
 
-  it('400 con { detail, code }: marca el campo del loop y muestra el detalle', async () => {
+  it('400 con { detail, code, field }: marca el campo (field) y muestra el detalle', async () => {
     mocks.patchAgentConfig.mockRejectedValue(
       Object.assign(new Error('tools no soportadas en este modelo'), {
         code: 'model_tools_unsupported',
+        field: 'responseModel',
       }),
     );
 
@@ -70,6 +91,26 @@ describe('U4 · errores visibles en el formulario', () => {
     await waitFor(() => expect(mocks.patchAgentConfig).toHaveBeenCalled());
     expect(await screen.findByText('tools no soportadas en este modelo')).toBeTruthy();
     expect(invalid(screen.getByLabelText('Response model'))).toBe('true');
+  });
+
+  it('el field tipado prevalece: el detail nombra reasoningModel pero field=responseModel → marca responseModel', async () => {
+    mocks.patchAgentConfig.mockRejectedValue(
+      Object.assign(
+        new Error('Model configuration validation failed for reasoningModel: model "x" is not approved'),
+        { code: 'model_not_approved', field: 'responseModel' },
+      ),
+    );
+
+    render(<AgentConfigForm agent={makeDualAgent()} onSaved={() => {}} />);
+    await screen.findAllByRole('option', { name: 'openai/gpt-4o' });
+
+    fireEvent.change(screen.getByLabelText('Response model'), { target: { value: 'openai/gpt-4o' } });
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => expect(mocks.patchAgentConfig).toHaveBeenCalled());
+    expect(await screen.findByText(/is not approved/)).toBeTruthy();
+    expect(invalid(screen.getByLabelText('Response model'))).toBe('true');
+    expect(invalid(screen.getByLabelText('Reasoning model'))).not.toBe('true');
   });
 
   it('400 sin code: muestra el detalle sin marcar campo', async () => {

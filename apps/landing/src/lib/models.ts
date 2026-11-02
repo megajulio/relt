@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, isModelErrorField, type ModelErrorField } from './api';
 
 /** Estado de un modelo dentro del catálogo (backend). */
 export type ModelStatus = 'approved' | 'deprecated';
@@ -63,39 +63,29 @@ export function modelOptionValues(options: ModelCatalogItem[], current: string):
 }
 
 /** Campo de modelo que debe marcarse ante un error del backend. */
-export type ModelErrorTarget = 'reasoningModel' | 'responseModel' | null;
+export type ModelErrorTarget = ModelErrorField | null;
 
 /**
- * Extrae el campo desde el `detail` del backend, que nombra el campo
- * (p.ej. "...validation failed for responseModel: ...") sin exponer `field`.
- */
-function fieldFromDetail(detail?: string): ModelErrorTarget {
-  if (!detail) return null;
-  if (detail.includes('reasoningModel')) return 'reasoningModel';
-  if (detail.includes('responseModel')) return 'responseModel';
-  return null;
-}
-
-/**
- * Determina qué campo de modelo marcar según el `code` del 400:
- * - `model_not_approved`: el campo nombrado en `detail` (robusto ante un
- *   catálogo desactualizado en pantalla); si el `detail` no lo nombra, cae al
- *   campo enviado cuyo valor no pertenece al catálogo (`id ∪ aliases`).
- * - `model_tools_unsupported`: el campo del loop (`responseModel` en single,
- *   `reasoningModel` en dual).
- * - `incomplete`: el campo nombrado en `detail` (el backend lo incluye).
- * - otros códigos: ninguno.
+ * Determina qué campo de modelo marcar según el `code` del 400 y el `field`
+ * tipado del backend (dato, no texto del mensaje). `field`, cuando es válido,
+ * prevalece. Si falta:
+ * - `model_not_approved`: fallback por catálogo (campo enviado fuera de
+ *   `id ∪ aliases`);
+ * - `model_tools_unsupported`: campo del loop (`responseModel` en single,
+ *   `reasoningModel` en dual);
+ * - `incomplete` / `invalid_model` / otros: ningún campo.
  */
 export function resolveModelErrorField(
   code: string | undefined,
   sent: { reasoningModel?: string | null; responseModel?: string | null },
   strategy: 'auto' | 'single' | 'dual',
   models: ModelCatalogItem[],
-  detail?: string,
+  field?: string,
 ): ModelErrorTarget {
+  const typed: ModelErrorTarget = isModelErrorField(field) ? field : null;
+
   if (code === 'model_not_approved') {
-    const fromDetail = fieldFromDetail(detail);
-    if (fromDetail) return fromDetail;
+    if (typed) return typed;
     if (
       typeof sent.reasoningModel === 'string' &&
       sent.reasoningModel &&
@@ -114,16 +104,14 @@ export function resolveModelErrorField(
   }
 
   if (code === 'model_tools_unsupported') {
+    if (typed) return typed;
     if (strategy === 'single') return 'responseModel';
     if (strategy === 'dual') return 'reasoningModel';
     return null;
   }
 
-  if (code === 'incomplete') {
-    return fieldFromDetail(detail);
-  }
-
-  return null;
+  // incomplete / invalid_model / otros: solo si llega un `field` válido.
+  return typed;
 }
 
 /**

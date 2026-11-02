@@ -14,6 +14,7 @@ import {
   optionsForField,
   resolveModelErrorField,
   type ModelCatalogItem,
+  type ModelErrorTarget,
 } from '@/lib/models';
 
 const inputCls =
@@ -49,7 +50,7 @@ function AgentConfigFormContent({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [models, setModels] = useState<ModelCatalogItem[]>([]);
-  const [errorField, setErrorField] = useState<'reasoningModel' | 'responseModel' | null>(null);
+  const [errorField, setErrorField] = useState<ModelErrorTarget>(null);
 
   const hasTools = (agent.config.toolBindings?.length ?? 0) > 0;
 
@@ -113,10 +114,8 @@ function AgentConfigFormContent({
       setSaved(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al guardar la configuración');
-      const code = (err as { code?: string } | undefined)?.code;
-      setErrorField(
-        resolveModelErrorField(code, patch, strategy, models, err instanceof Error ? err.message : undefined),
-      );
+      const errorInfo = err as { code?: string; field?: string } | undefined;
+      setErrorField(resolveModelErrorField(errorInfo?.code, patch, strategy, models, errorInfo?.field));
     } finally {
       setSaving(false);
     }
@@ -159,6 +158,7 @@ function AgentConfigFormContent({
         <Field label="Model strategy">
           <select
             aria-label="Model strategy"
+            aria-invalid={errorField === 'modelStrategy'}
             className={inputCls}
             value={strategy}
             onChange={(e) => setStrategy(e.target.value as ModelStrategyChoice)}
