@@ -21,6 +21,9 @@ export default function CreateAgentPage() {
   const [defaultSkill, setDefaultSkill] = useState('general');
   const [status, setStatus] = useState<'active' | 'paused' | 'archived'>('active');
   const [systemPrompt, setSystemPrompt] = useState('');
+  const [modelStrategy, setModelStrategy] = useState<'dual' | 'single'>('dual');
+  const [reasoningModel, setReasoningModel] = useState('gpt-4o');
+  const [responseModel, setResponseModel] = useState('gpt-4o-mini');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [skills, setSkills] = useState<SkillListItem[]>([]);
@@ -76,6 +79,9 @@ export default function CreateAgentPage() {
         status,
         config: {
           systemPrompt: systemPrompt || undefined,
+          modelStrategy,
+          reasoningModel: modelStrategy === 'dual' ? reasoningModel : undefined,
+          responseModel,
         },
       };
 
@@ -192,38 +198,43 @@ export default function CreateAgentPage() {
         {/* Model Strategy */}
         <div>
           <label className={labelCls}>Model Strategy</label>
-          <select value="backend" className={inputCls} disabled>
-            <option value="backend">Managed by backend</option>
+          <select
+            value={modelStrategy}
+            onChange={(e) => setModelStrategy(e.target.value as 'dual' | 'single')}
+            className={inputCls}
+            disabled={saving}
+          >
+            <option value="dual">Dual (reasoning + response)</option>
+            <option value="single">Single model</option>
           </select>
-          <p className="text-xs text-gray-500 mt-1">
-            La estrategia efectiva se resuelve en el runtime del backend.
-          </p>
         </div>
 
-        {/* Reasoning Model */}
-        <div>
-          <label className={labelCls}>Reasoning Model</label>
-          <input
-            type="text"
-            value=""
-            placeholder="lo elige ModelStrategy"
-            className={inputCls}
-            disabled
-          />
-          <p className="text-xs text-gray-500 mt-1">lo elige ModelStrategy</p>
-        </div>
+        {/* Reasoning Model (solo si dual) */}
+        {modelStrategy === 'dual' && (
+          <div>
+            <label className={labelCls}>Reasoning Model</label>
+            <input
+              type="text"
+              value={reasoningModel}
+              onChange={(e) => setReasoningModel(e.target.value)}
+              placeholder="gpt-4o"
+              className={inputCls}
+              disabled={saving}
+            />
+          </div>
+        )}
 
         {/* Response Model */}
         <div>
           <label className={labelCls}>Response Model</label>
           <input
             type="text"
-            value=""
-            placeholder="lo elige ModelStrategy"
+            value={responseModel}
+            onChange={(e) => setResponseModel(e.target.value)}
+            placeholder="gpt-4o-mini"
             className={inputCls}
-            disabled
+            disabled={saving}
           />
-          <p className="text-xs text-gray-500 mt-1">lo elige ModelStrategy</p>
         </div>
 
         {/* Actions */}
