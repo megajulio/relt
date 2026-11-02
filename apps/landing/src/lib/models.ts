@@ -50,6 +50,18 @@ export function isModelInCatalog(models: ModelCatalogItem[], value: string): boo
   return models.some((m) => m.id === value || m.aliases.includes(value));
 }
 
+/**
+ * Valores para un `<select>`: los ids ofrecidos, más el valor actual si no está
+ * entre ellos (para que un modelo legacy/alias/fuera de catálogo siga visible).
+ */
+export function modelOptionValues(options: ModelCatalogItem[], current: string): string[] {
+  const ids = options.map((m) => m.id);
+  if (current && !ids.includes(current)) {
+    return [current, ...ids];
+  }
+  return ids;
+}
+
 /** Campo de modelo que debe marcarse ante un error del backend. */
 export type ModelErrorTarget = 'reasoningModel' | 'responseModel' | null;
 

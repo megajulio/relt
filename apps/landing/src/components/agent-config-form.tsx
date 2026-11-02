@@ -7,7 +7,14 @@ import {
   selectionFromConfig,
   type ModelStrategyChoice,
 } from '@/lib/model-selection';
-import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem } from '@/lib/models';
+import {
+  isModelInCatalog,
+  listModels,
+  modelOptionValues,
+  optionsForField,
+  resolveModelErrorField,
+  type ModelCatalogItem,
+} from '@/lib/models';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -169,12 +176,20 @@ function AgentConfigFormContent({
               onChange={(e) => setReasoningModel(e.target.value)}
             >
               <option value="">Seleccioná un modelo…</option>
-              {optionsForField(models, 'dual', 'reasoningModel', hasTools).map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.id}
+              {modelOptionValues(
+                optionsForField(models, 'dual', 'reasoningModel', hasTools),
+                reasoningModel,
+              ).map((id) => (
+                <option key={id} value={id}>
+                  {id}
                 </option>
               ))}
             </select>
+            {reasoningModel && !isModelInCatalog(models, reasoningModel) && (
+              <p className="text-xs text-amber-400 mt-1">
+                El modelo guardado «{reasoningModel}» está fuera del catálogo aprobado.
+              </p>
+            )}
           </Field>
         )}
         {strategy !== 'auto' && (
@@ -187,16 +202,24 @@ function AgentConfigFormContent({
               onChange={(e) => setResponseModel(e.target.value)}
             >
               <option value="">Seleccioná un modelo…</option>
-              {optionsForField(models, strategy, 'responseModel', hasTools).map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.id}
+              {modelOptionValues(
+                optionsForField(models, strategy, 'responseModel', hasTools),
+                responseModel,
+              ).map((id) => (
+                <option key={id} value={id}>
+                  {id}
                 </option>
               ))}
             </select>
+            {responseModel && !isModelInCatalog(models, responseModel) && (
+              <p className="text-xs text-amber-400 mt-1">
+                El modelo guardado «{responseModel}» está fuera del catálogo aprobado.
+              </p>
+            )}
           </Field>
         )}
         <Field label="Tone">
-          <select className={inputCls} value={tone} onChange={(e) => setTone(e.target.value)}>
+          <select aria-label="Tone" className={inputCls} value={tone} onChange={(e) => setTone(e.target.value)}>
             {TONES.map((t) => (
               <option key={t} value={t}>
                 {t}
