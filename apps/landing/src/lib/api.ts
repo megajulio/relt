@@ -9,7 +9,21 @@ interface ApiError {
   title?: string;
   status?: number;
   detail?: string;
+  code?: string;
+  field?: string;
   instance?: string;
+}
+
+/** Campos de modelo que el backend puede señalar en `field`. */
+export const MODEL_ERROR_FIELDS = ['modelStrategy', 'reasoningModel', 'responseModel'] as const;
+export type ModelErrorField = (typeof MODEL_ERROR_FIELDS)[number];
+
+/**
+ * `true` SOLO si `value` es uno de los campos de modelo válidos. El `field`
+ * recibido por JSON es dato NO confiable: se usa únicamente si está en la lista.
+ */
+export function isModelErrorField(value: unknown): value is ModelErrorField {
+  return typeof value === 'string' && (MODEL_ERROR_FIELDS as readonly string[]).includes(value);
 }
 
 async function request<T>(
@@ -35,9 +49,15 @@ async function request<T>(
 
     const requestError = new Error(
       error.detail || `HTTP ${response.status}`,
-    ) as Error & { status?: number };
+    ) as Error & { status?: number; code?: string; field?: ModelErrorField };
 
     requestError.status = response.status;
+    if (typeof error.code === 'string') {
+      requestError.code = error.code;
+    }
+    if (isModelErrorField(error.field)) {
+      requestError.field = error.field;
+    }
 
     throw requestError;
   }
@@ -52,12 +72,12 @@ async function request<T>(
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body: any) =>
+  post: <T>(path: string, body: unknown) =>
     request<T>(path, {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  patch: <T>(path: string, body: any) =>
+  patch: <T>(path: string, body: unknown) =>
     request<T>(path, {
       method: 'PATCH',
       body: JSON.stringify(body),

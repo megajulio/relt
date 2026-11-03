@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { createAgent, type CreateAgentInput } from '@/lib/agents';
+import { listSkills, type SkillListItem } from '@/lib/skills';
+import { buildCreateModelConfig, type ModelStrategyChoice } from '@/lib/model-selection';
+import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem, type ModelErrorTarget } from '@/lib/models';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -20,21 +23,74 @@ export default function CreateAgentPage() {
   const [defaultSkill, setDefaultSkill] = useState('general');
   const [status, setStatus] = useState<'active' | 'paused' | 'archived'>('active');
   const [systemPrompt, setSystemPrompt] = useState('');
-  const [modelStrategy, setModelStrategy] = useState<'dual' | 'single'>('dual');
-  const [reasoningModel, setReasoningModel] = useState('gpt-4o');
-  const [responseModel, setResponseModel] = useState('gpt-4o-mini');
-
+  const [strategy, setStrategy] = useState<ModelStrategyChoice>('auto');
+  const [reasoningModel, setReasoningModel] = useState('');
+  const [responseModel, setResponseModel] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<ModelErrorTarget>(null);
+  const [skills, setSkills] = useState<SkillListItem[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(true);
+  const [skillsError, setSkillsError] = useState<string | null>(null);
+  const [models, setModels] = useState<ModelCatalogItem[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listSkills()
+      .then((items) => {
+        if (cancelled) return;
+
+        setSkills(items);
+        setSkillsError(null);
+
+        if (!items.some((skill) => skill.name === 'general')) {
+          setSkillsError('The required "general" skill is not available.');
+        }
+      })
+      .catch((loadError: unknown) => {
+        if (!cancelled) {
+          setSkillsError(
+            loadError instanceof Error ? loadError.message : 'Failed to load skills',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setSkillsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listModels()
+      .then((items) => {
+        if (!cancelled) setModels(items);
+      })
+      .catch(() => {
+        if (!cancelled) setModels([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setErrorField(null);
 
     if (!name.trim() || !key.trim()) {
       setError('Name and key are required');
       return;
     }
+
+    const modelConfig = buildCreateModelConfig({ strategy, reasoningModel, responseModel });
 
     setSaving(true);
 
@@ -46,16 +102,17 @@ export default function CreateAgentPage() {
         status,
         config: {
           systemPrompt: systemPrompt || undefined,
-          modelStrategy,
-          reasoningModel: modelStrategy === 'dual' ? reasoningModel : undefined,
-          responseModel,
+          ...modelConfig,
         },
       };
 
       const agent = await createAgent(input);
       router.push(`/dashboard/agents/${agent.id}`);
     } catch (err) {
-      setError((err as Error).message || 'Failed to create agent');
+      const message = err instanceof Error ? err.message : 'Failed to create agent';
+      setError(message);
+      const errorInfo = err as { code?: string; field?: string } | undefined;
+      setErrorField(resolveModelErrorField(errorInfo?.code, modelConfig, strategy, models, errorInfo?.field));
     } finally {
       setSaving(false);
     }
@@ -111,14 +168,27 @@ export default function CreateAgentPage() {
         {/* Default Skill */}
         <div>
           <label className={labelCls}>Default Skill</label>
-          <input
-            type="text"
+          <select
             value={defaultSkill}
             onChange={(e) => setDefaultSkill(e.target.value)}
-            placeholder="general"
             className={inputCls}
-            disabled={saving}
-          />
+            disabled={saving || skillsLoading || !!skillsError}
+          >
+            {skillsLoading ? (
+              <option value="general">Loading skills...</option>
+            ) : skills.length === 0 ? (
+              <option value="general">Skills unavailable</option>
+            ) : (
+              skills.map((skill) => (
+                <option key={skill.name} value={skill.name}>
+                  {skill.name}
+                </option>
+              ))
+            )}
+          </select>
+          {skillsError && (
+            <p className="text-xs text-red-400 mt-1">{skillsError}</p>
+          )}
         </div>
 
         {/* Status */}
@@ -126,7 +196,7 @@ export default function CreateAgentPage() {
           <label className={labelCls}>Initial Status</label>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value as any)}
+            onChange={(e) => setStatus(e.target.value as 'active' | 'paused' | 'archived')}
             className={inputCls}
             disabled={saving}
           >
@@ -153,49 +223,73 @@ export default function CreateAgentPage() {
         <div>
           <label className={labelCls}>Model Strategy</label>
           <select
-            value={modelStrategy}
-            onChange={(e) => setModelStrategy(e.target.value as any)}
+            aria-label="Model strategy"
+            aria-invalid={errorField === 'modelStrategy'}
+            value={strategy}
+            onChange={(e) => setStrategy(e.target.value as ModelStrategyChoice)}
             className={inputCls}
             disabled={saving}
           >
-            <option value="dual">Dual (reasoning + response)</option>
+            <option value="auto">Automático (RELT Auto)</option>
             <option value="single">Single model</option>
+            <option value="dual">Dual (reasoning + response)</option>
           </select>
         </div>
 
         {/* Reasoning Model (solo si dual) */}
-        {modelStrategy === 'dual' && (
+        {strategy === 'dual' && (
           <div>
             <label className={labelCls}>Reasoning Model</label>
-            <input
-              type="text"
+            <select
+              aria-label="Reasoning model"
+              aria-invalid={errorField === 'reasoningModel'}
               value={reasoningModel}
               onChange={(e) => setReasoningModel(e.target.value)}
-              placeholder="gpt-4o"
               className={inputCls}
               disabled={saving}
-            />
+            >
+              <option value="">Seleccioná un modelo…</option>
+              {optionsForField(models, 'dual', 'reasoningModel', false).map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.id}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
-        {/* Response Model */}
-        <div>
-          <label className={labelCls}>Response Model</label>
-          <input
-            type="text"
-            value={responseModel}
-            onChange={(e) => setResponseModel(e.target.value)}
-            placeholder="gpt-4o-mini"
-            className={inputCls}
-            disabled={saving}
-          />
-        </div>
+        {/* Response Model (single o dual) */}
+        {strategy !== 'auto' && (
+          <div>
+            <label className={labelCls}>Response Model</label>
+            <select
+              aria-label="Response model"
+              aria-invalid={errorField === 'responseModel'}
+              value={responseModel}
+              onChange={(e) => setResponseModel(e.target.value)}
+              className={inputCls}
+              disabled={saving}
+            >
+              <option value="">Seleccioná un modelo…</option>
+              {optionsForField(models, strategy, 'responseModel', false).map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.id}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">
           <button
             type="submit"
-            disabled={saving}
+            disabled={
+              saving ||
+              skillsLoading ||
+              !!skillsError ||
+              !skills.some((skill) => skill.name === defaultSkill)
+            }
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium px-6 py-2 rounded-lg transition-colors"
           >
             {saving ? 'Creating...' : 'Create Agent'}

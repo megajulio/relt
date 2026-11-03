@@ -141,9 +141,9 @@ export async function getAgent(id: string): Promise<AgentDetail> {
 export interface AgentConfigPatch {
   maxSteps?: number | null;
   systemPrompt?: string;
-  modelStrategy?: 'dual' | 'single';
-  reasoningModel?: string;
-  responseModel?: string;
+  modelStrategy?: 'dual' | 'single' | null;
+  reasoningModel?: string | null;
+  responseModel?: string | null;
   tone?: 'proactive' | 'reactive' | 'neutral' | 'formal';
   skillBinding?: { skill: string; version?: string };
   toolBindings?: string[];
