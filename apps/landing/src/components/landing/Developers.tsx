@@ -356,7 +356,7 @@ export default function Developers() {
         {/* Docs CTA */}
         <div className="mt-6">
           <a
-            href="#start"
+            href="#developers"
             className="
               inline-flex
               items-center
@@ -369,7 +369,7 @@ export default function Developers() {
               hover:text-blue-200
             "
           >
-            View developer docs
+            Explore the API
             <span aria-hidden="true">→</span>
           </a>
         </div>

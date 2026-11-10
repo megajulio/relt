@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import AgentDemo from './AgentDemo';
 import Build from './Build';
 import Observe from './Observe';
@@ -25,7 +26,7 @@ function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-4 lg:px-10">
-        <a href="/" className="text-2xl font-bold tracking-tight text-white">
+        <Link href="/" className="text-2xl font-bold tracking-tight text-white">
           <img
   src="/images/relt-logo.png"
   alt="Relt Logo"
@@ -34,7 +35,7 @@ function Nav() {
  
   className="h-13 w-auto"  
 />
-        </a>
+        </Link>
 
         <nav className="hidden items-center gap-15 text-sm text-slate-20 md:flex">
           <a href="#product" className="transition hover:text-white">Product</a>
@@ -287,7 +288,7 @@ function Hero() {
             {/* CTA */}
             <div className="mt-6">
               <a
-                href="/sandbox"
+                href="/dashboard/sandbox"
                 className="
                   inline-flex
                   items-center
@@ -646,7 +647,7 @@ function Pricing() {
             </div>
 
             <a
-              href="#connect"
+              href="#product"
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-300 transition-colors hover:text-blue-200"
             >
               See how it works
