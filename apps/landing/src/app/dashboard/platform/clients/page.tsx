@@ -69,6 +69,34 @@ function NumbersCell({ row }: { row: PlatformClientRow }) {
   );
 }
 
+function StepsGrid({ row }: { row: PlatformClientRow }) {
+  return (
+    <div className="sm:col-span-2 lg:col-span-3">
+      <div className="mb-2 text-xs uppercase tracking-wide text-gray-500">
+        Recorrido · estado actual (hoy)
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {LAST_STEPS.map((step) => {
+          const ok = row.steps?.[step] === true;
+          return (
+            <span
+              key={step}
+              className={`rounded-md border px-2 py-1 text-xs font-medium ${
+                ok
+                  ? 'border-green-500/40 bg-green-500/10 text-green-300'
+                  : 'border-gray-700 bg-gray-800 text-gray-400'
+              }`}
+              title={ok ? 'cumplido hoy' : 'no cumplido hoy'}
+            >
+              {ok ? '✓' : '✗'} {step}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Detail({ row }: { row: PlatformClientRow }) {
   const items: Array<[string, string]> = [
     ['Organización', `${row.organizationName} (${row.organizationId})`],
@@ -88,7 +116,8 @@ function Detail({ row }: { row: PlatformClientRow }) {
     ['Ejecuciones con error 7d', String(row.activity.executionsFailed7d)],
     ['Inbox FAILED', String(row.activity.inboxFailed)],
     ['Inbox RECEIVED > 1 h', String(row.activity.inboxReceivedOver1h)],
-    ['Último paso', row.lastStep],
+    ['Último paso (hoy)', row.lastStep],
+    ['Primera respuesta (histórico)', row.firstReplyAt ? fmt(row.firstReplyAt) : 'nunca'],
   ];
   return (
     <div className="grid grid-cols-1 gap-x-8 gap-y-2 bg-gray-950/60 p-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -98,6 +127,7 @@ function Detail({ row }: { row: PlatformClientRow }) {
           <div className="text-sm text-gray-200 break-words">{value}</div>
         </div>
       ))}
+      <StepsGrid row={row} />
     </div>
   );
 }
@@ -154,11 +184,21 @@ export default function PlatformClientsPage() {
           <p className="mt-1 text-gray-400">
             Internal view of every organization, its channels and how far it got in onboarding.
           </p>
+          <p className="mt-1 text-xs text-gray-500">
+            <span className="font-medium text-gray-400">Estado actual</span> = recorrido consecutivo de hoy ·{' '}
+            <span className="font-medium text-gray-400">Histórico</span> = primera respuesta enviada alguna vez
+          </p>
         </div>
         <span className="rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300">
           Read-only
         </span>
       </div>
+
+      {data?.truncated && (
+        <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200">
+          Mostrando las primeras {clients.length} de {data.totalOrganizations} organizaciones (tope duro de 500).
+        </div>
+      )}
 
       {totals && (
         <div className="space-y-4">
@@ -209,7 +249,7 @@ export default function PlatformClientsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-800">
-                {['Organization', 'Owner', 'Plan', 'Sandbox', 'Numbers', 'Agents', 'Activity 7d', 'Last step'].map(
+                {['Organization', 'Owner', 'Plan', 'Sandbox', 'Numbers', 'Agents', 'Activity 7d', 'Last step (today)'].map(
                   (h) => (
                     <th
                       key={h}
@@ -261,6 +301,9 @@ export default function PlatformClientsPage() {
                     </td>
                     <td className="px-4 py-4">
                       <StepBadge step={row.lastStep} />
+                      {row.firstReplyAt && (
+                        <div className="mt-1 text-xs text-gray-500">histórico: {fmt(row.firstReplyAt)}</div>
+                      )}
                     </td>
                   </tr>
                   {openId === row.organizationId && (

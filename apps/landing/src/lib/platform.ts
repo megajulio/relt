@@ -38,11 +38,19 @@ export interface PlatformClientRow {
     inboxFailed: number;
     inboxReceivedOver1h: number;
   };
+  /** Las 6 condiciones del recorrido, tal como están HOY. */
+  steps: Record<string, boolean>;
+  /** Estado actual: el paso más alto con todos los anteriores cumplidos hoy. */
   lastStep: string;
+  /** Histórico: primera respuesta enviada alguna vez (aproximación observable). */
+  firstReplyAt: string | null;
 }
 
 export interface PlatformClientsOverview {
   generatedAt: string;
+  /** La función tiene un tope duro de 500 organizaciones. */
+  truncated: boolean;
+  totalOrganizations: number;
   totals: {
     organizations: number;
     funnel: Record<string, number>;
