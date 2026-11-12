@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/use-auth';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { DashboardAuthProvider } from '@/components/dashboard/DashboardAuthProvider';
+import { isPlatformAdmin } from '@/lib/platform';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Overview', exact: true },
@@ -14,9 +16,23 @@ const NAV_ITEMS = [
   { href: '/dashboard/quickstart', label: 'Quickstart' },
 ];
 
+/** Solo aparece si el servidor confirma que la sesión es de un administrador de plataforma. */
+const PLATFORM_NAV_ITEM = { href: '/dashboard/platform/clients', label: 'Platform' };
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const pathname = usePathname();
+  const [showPlatform, setShowPlatform] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    isPlatformAdmin().then((ok) => {
+      if (!cancelled) setShowPlatform(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (auth.status === 'loading') {
     return (
@@ -79,8 +95,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive = item.exact
+          {(showPlatform ? [...NAV_ITEMS, PLATFORM_NAV_ITEM] : NAV_ITEMS).map((item) => {
+            const isActive = 'exact' in item && item.exact
               ? pathname === item.href
               : pathname.startsWith(item.href);
             return (
