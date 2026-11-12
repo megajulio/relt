@@ -69,6 +69,22 @@ export const LAST_STEPS = [
   'primera respuesta',
 ] as const;
 
+/**
+ * K1 (Orden #48) · El sexto paso es una INFERENCIA, no un hecho: el esquema no
+ * guarda qué ejecución generó cada mensaje saliente. Puede dar falsos negativos
+ * y también falsos positivos (p. ej. un saliente de un operador en esa hora).
+ */
+export const FIRST_REPLY_STEP = 'primera respuesta';
+
+/** Regla literal de la inferencia (K1). Se muestra al usuario tal cual. */
+export const FIRST_REPLY_RULE =
+  'ejecución exitosa del Agent seguida de un mensaje saliente aceptado en la misma conversación dentro de 1 h; puede no ser la respuesta del Agent';
+
+/** Etiqueta visible de un paso. El sexto se rotula «primera respuesta (inferida)». */
+export function stepLabel(step: string): string {
+  return step === FIRST_REPLY_STEP ? 'primera respuesta (inferida)' : step;
+}
+
 /** ¿La sesión actual es de un administrador de plataforma? */
 export async function isPlatformAdmin(): Promise<boolean> {
   try {

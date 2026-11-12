@@ -3,8 +3,11 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import {
+  FIRST_REPLY_RULE,
+  FIRST_REPLY_STEP,
   getPlatformClients,
   LAST_STEPS,
+  stepLabel,
   type PlatformClientRow,
   type PlatformClientsOverview,
 } from '@/lib/platform';
@@ -35,8 +38,11 @@ function fmt(value: string | null): string {
 function StepBadge({ step }: { step: string }) {
   const cls = STEP_STYLES[step] || 'bg-gray-500/20 text-gray-300 border-gray-500/30';
   return (
-    <span className={`inline-block whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {step}
+    <span
+      className={`inline-block whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium ${cls}`}
+      title={step === FIRST_REPLY_STEP ? FIRST_REPLY_RULE : undefined}
+    >
+      {stepLabel(step)}
     </span>
   );
 }
@@ -78,6 +84,7 @@ function StepsGrid({ row }: { row: PlatformClientRow }) {
       <div className="flex flex-wrap gap-2">
         {LAST_STEPS.map((step) => {
           const ok = row.steps?.[step] === true;
+          const isFirstReply = step === FIRST_REPLY_STEP;
           return (
             <span
               key={step}
@@ -86,13 +93,16 @@ function StepsGrid({ row }: { row: PlatformClientRow }) {
                   ? 'border-green-500/40 bg-green-500/10 text-green-300'
                   : 'border-gray-700 bg-gray-800 text-gray-400'
               }`}
-              title={ok ? 'cumplido hoy' : 'no cumplido hoy'}
+              title={isFirstReply ? FIRST_REPLY_RULE : ok ? 'cumplido hoy' : 'no cumplido hoy'}
             >
-              {ok ? '✓' : '✗'} {step}
+              {ok ? '✓' : '✗'} {stepLabel(step)}
             </span>
           );
         })}
       </div>
+      <p className="mt-2 text-xs text-gray-500">
+        «primera respuesta (inferida)»: {FIRST_REPLY_RULE}
+      </p>
     </div>
   );
 }
@@ -116,8 +126,8 @@ function Detail({ row }: { row: PlatformClientRow }) {
     ['Ejecuciones con error 7d', String(row.activity.executionsFailed7d)],
     ['Inbox FAILED', String(row.activity.inboxFailed)],
     ['Inbox RECEIVED > 1 h', String(row.activity.inboxReceivedOver1h)],
-    ['Último paso (hoy)', row.lastStep],
-    ['Primera respuesta (histórico)', row.firstReplyAt ? fmt(row.firstReplyAt) : 'nunca'],
+    ['Último paso (hoy)', stepLabel(row.lastStep)],
+    ['Primera respuesta (inferida) · histórico', row.firstReplyAt ? fmt(row.firstReplyAt) : 'nunca'],
   ];
   return (
     <div className="grid grid-cols-1 gap-x-8 gap-y-2 bg-gray-950/60 p-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -186,7 +196,10 @@ export default function PlatformClientsPage() {
           </p>
           <p className="mt-1 text-xs text-gray-500">
             <span className="font-medium text-gray-400">Estado actual</span> = recorrido consecutivo de hoy ·{' '}
-            <span className="font-medium text-gray-400">Histórico</span> = primera respuesta enviada alguna vez
+            <span className="font-medium text-gray-400">Histórico</span> = primera respuesta (inferida) enviada alguna vez
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            «primera respuesta (inferida)»: {FIRST_REPLY_RULE}
           </p>
         </div>
         <span className="rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300">
@@ -220,7 +233,7 @@ export default function PlatformClientsPage() {
               </div>
             </div>
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Reached first reply</div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">Reached first reply (inferred)</div>
               <div className="text-2xl font-semibold text-white">{totals.funnel['primera respuesta'] ?? 0}</div>
             </div>
           </div>
@@ -230,7 +243,7 @@ export default function PlatformClientsPage() {
             <div className="flex flex-wrap gap-3">
               {LAST_STEPS.map((step) => (
                 <div key={step} className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-2">
-                  <div className="text-xs text-gray-400">{step}</div>
+                  <div className="text-xs text-gray-400">{stepLabel(step)}</div>
                   <div className="text-lg font-semibold text-white">{totals.funnel[step] ?? 0}</div>
                 </div>
               ))}
@@ -302,7 +315,9 @@ export default function PlatformClientsPage() {
                     <td className="px-4 py-4">
                       <StepBadge step={row.lastStep} />
                       {row.firstReplyAt && (
-                        <div className="mt-1 text-xs text-gray-500">histórico: {fmt(row.firstReplyAt)}</div>
+                        <div className="mt-1 text-xs text-gray-500" title={FIRST_REPLY_RULE}>
+                          primera respuesta (inferida): {fmt(row.firstReplyAt)}
+                        </div>
                       )}
                     </td>
                   </tr>
