@@ -207,6 +207,10 @@ export interface PhoneNumberCatalogItem {
   phoneNumber: string;
   status: string;
   provider: string;
+  /** `connection_state` del canal (D1.1). `connected` = canal conectado. */
+  connectionState: string | null;
+  /** Orden #49 · D5: el canal tiene algún binding activo con un Agent activo. */
+  hasActiveBinding: boolean;
 }
 
 interface BackendPhoneNumberCatalogItem {
@@ -214,6 +218,8 @@ interface BackendPhoneNumberCatalogItem {
   phone_number: string;
   status: string;
   provider: string;
+  connection_state?: string | null;
+  has_active_binding?: boolean | null;
 }
 
 export async function listPhoneNumbers(): Promise<PhoneNumberCatalogItem[]> {
@@ -225,6 +231,8 @@ export async function listPhoneNumbers(): Promise<PhoneNumberCatalogItem[]> {
     phoneNumber: p.phone_number,
     status: p.status,
     provider: p.provider,
+    connectionState: p.connection_state ?? null,
+    hasActiveBinding: p.has_active_binding === true,
   }));
 }
 

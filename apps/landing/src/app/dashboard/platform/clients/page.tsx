@@ -5,9 +5,12 @@ import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import {
   FIRST_REPLY_RULE,
   FIRST_REPLY_STEP,
+  firstReplyLabel,
+  firstReplyRule,
   getPlatformClients,
   LAST_STEPS,
   stepLabel,
+  type FirstReplySource,
   type PlatformClientRow,
   type PlatformClientsOverview,
 } from '@/lib/platform';
@@ -35,14 +38,14 @@ function fmt(value: string | null): string {
   return d.toISOString().slice(0, 16).replace('T', ' ');
 }
 
-function StepBadge({ step }: { step: string }) {
+function StepBadge({ step, source }: { step: string; source?: FirstReplySource }) {
   const cls = STEP_STYLES[step] || 'bg-gray-500/20 text-gray-300 border-gray-500/30';
   return (
     <span
       className={`inline-block whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium ${cls}`}
-      title={step === FIRST_REPLY_STEP ? FIRST_REPLY_RULE : undefined}
+      title={step === FIRST_REPLY_STEP ? firstReplyRule(source) : undefined}
     >
-      {stepLabel(step)}
+      {stepLabel(step, source)}
     </span>
   );
 }
@@ -93,9 +96,9 @@ function StepsGrid({ row }: { row: PlatformClientRow }) {
                   ? 'border-green-500/40 bg-green-500/10 text-green-300'
                   : 'border-gray-700 bg-gray-800 text-gray-400'
               }`}
-              title={isFirstReply ? FIRST_REPLY_RULE : ok ? 'cumplido hoy' : 'no cumplido hoy'}
+              title={isFirstReply ? firstReplyRule(row.firstReplySource) : ok ? 'cumplido hoy' : 'no cumplido hoy'}
             >
-              {ok ? '✓' : '✗'} {stepLabel(step)}
+              {ok ? '✓' : '✗'} {stepLabel(step, row.firstReplySource)}
             </span>
           );
         })}
@@ -126,8 +129,13 @@ function Detail({ row }: { row: PlatformClientRow }) {
     ['Ejecuciones con error 7d', String(row.activity.executionsFailed7d)],
     ['Inbox FAILED', String(row.activity.inboxFailed)],
     ['Inbox RECEIVED > 1 h', String(row.activity.inboxReceivedOver1h)],
-    ['Último paso (hoy)', stepLabel(row.lastStep)],
-    ['Primera respuesta (inferida) · histórico', row.firstReplyAt ? fmt(row.firstReplyAt) : 'nunca'],
+    ['Último paso (hoy)', stepLabel(row.lastStep, row.firstReplySource)],
+    [
+      row.firstReplySource === 'link'
+        ? 'Primera respuesta (por vínculo) · histórico'
+        : 'Primera respuesta (inferida) · histórico',
+      row.firstReplyAt ? fmt(row.firstReplyAt) : 'nunca',
+    ],
   ];
   return (
     <div className="grid grid-cols-1 gap-x-8 gap-y-2 bg-gray-950/60 p-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -196,7 +204,8 @@ export default function PlatformClientsPage() {
           </p>
           <p className="mt-1 text-xs text-gray-500">
             <span className="font-medium text-gray-400">Estado actual</span> = recorrido consecutivo de hoy ·{' '}
-            <span className="font-medium text-gray-400">Histórico</span> = primera respuesta (inferida) enviada alguna vez
+            <span className="font-medium text-gray-400">Histórico</span> = primera respuesta (por
+            vínculo si existe; «(inferida)» si es anterior al vínculo) enviada alguna vez
           </p>
           <p className="mt-1 text-xs text-gray-500">
             «primera respuesta (inferida)»: {FIRST_REPLY_RULE}
@@ -278,6 +287,8 @@ export default function PlatformClientsPage() {
               {clients.map((row) => (
                 <Fragment key={row.organizationId}>
                   <tr
+                    key={row.organizationId}
+                    data-testid={`client-row-${row.organizationId}`}
                     onClick={() => setOpenId(openId === row.organizationId ? null : row.organizationId)}
                     className="cursor-pointer border-b border-gray-800 last:border-0 hover:bg-gray-800/30"
                   >
@@ -313,10 +324,14 @@ export default function PlatformClientsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      <StepBadge step={row.lastStep} />
+                      <StepBadge step={row.lastStep} source={row.firstReplySource} />
                       {row.firstReplyAt && (
-                        <div className="mt-1 text-xs text-gray-500" title={FIRST_REPLY_RULE}>
-                          primera respuesta (inferida): {fmt(row.firstReplyAt)}
+                        <div
+                          data-testid="first-reply-datum"
+                          className="mt-1 text-xs text-gray-500"
+                          title={firstReplyRule(row.firstReplySource)}
+                        >
+                          {firstReplyLabel(row.firstReplySource)}: {fmt(row.firstReplyAt)}
                         </div>
                       )}
                     </td>
