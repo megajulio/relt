@@ -26,12 +26,17 @@ export const D2_CONFLICT_CODE = 'channel_number_conflict';
 /**
  * D5 · literal de la orden (se conserva como referencia y para los tests del literal).
  * El texto VISIBLE va en el idioma del dashboard, igual que D2 (corrección H3-2).
+ *
+ * Orden #51 · C3 (G3, D-50.4): el aviso pasa a ser fiel al enrutamiento. El Agent se
+ * resuelve por `conversations.agent_id`, así que lo que cambia al asignar es lo que
+ * reciben las conversaciones NUEVAS; las existentes conservan su Agent.
  */
 export const D5_NO_AGENT_TEXT_ORDER_LITERAL =
-  'Este número no tiene un agente asignado: responde el flujo genérico.';
+  'Este número no tiene un agente asignado: las conversaciones nuevas reciben la respuesta genérica.';
 
 /** D5 · texto visible en el dashboard (inglés), exacto. */
-export const D5_NO_AGENT_TEXT = 'This number has no agent assigned: the generic flow is replying.';
+export const D5_NO_AGENT_TEXT =
+  'This number has no agent assigned: new conversations get the generic reply.';
 
 /** ¿Este estado del sandbox es el rechazo de D2? */
 export function isD2Conflict(
