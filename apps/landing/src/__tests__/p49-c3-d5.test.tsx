@@ -1,12 +1,15 @@
 /**
  * Orden #49 · Bloque 3 · C3 — rótulo de D5.
  *
- * «Este número no tiene un agente asignado: responde el flujo genérico.» con la acción
- * directa de asignarlo, en las tres superficies: sandbox, Channels y detalle del Agent.
+ * «This number has no agent assigned: new conversations get the generic reply.»
+ * (literal de G3 de la Orden #51) con la acción directa de asignarlo, en las tres
+ * superficies: sandbox, Channels y detalle del Agent.
  *
- * Ajustado a G3 de la Orden #51 (D-50.4): el literal pasa a decir que lo que reciben la
- * respuesta genérica son las conversaciones NUEVAS (las existentes conservan su Agent).
- * Las expectativas de comportamiento (tres superficies + acción de asignar) no cambian.
+ * La #49 pedía «Este número no tiene un agente asignado: responde el flujo genérico.»;
+ * G3 de la Orden #51 (D-50.4) lo corrige porque el worker resuelve el Agent por
+ * `conversations.agent_id`: lo genérico lo reciben las conversaciones NUEVAS y las
+ * existentes conservan su Agent. Las expectativas de comportamiento (tres superficies
+ * + acción de asignar) no cambian.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
