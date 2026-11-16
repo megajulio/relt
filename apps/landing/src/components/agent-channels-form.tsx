@@ -104,8 +104,8 @@ export default function AgentChannelsForm({
       const fresh = await getAgent(agent.id);
       onSaved(fresh);
       setInfo('Channel assigned successfully.');
-    } catch (err: any) {
-      setError(err?.message || 'Error assigning channel');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error assigning channel');
     }
   }
 
