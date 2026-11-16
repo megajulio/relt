@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
+import { ChannelWithoutAgentNotice } from '@/components/dashboard/ChannelWithoutAgentNotice';
 import { getAgent, type AgentDetail } from '@/lib/agents';
+import { useUnassignedChannels } from '@/lib/use-unassigned-channels';
 import AgentConfigForm from '@/components/agent-config-form';
 import AgentSkillsForm from '@/components/agent-skills-form';
 import AgentToolsForm from '@/components/agent-tools-form';
@@ -56,11 +58,15 @@ function Chip({ children }: { children: React.ReactNode }) {
 export default function AgentDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  useDashboardAuth();
+  const { data: authData } = useDashboardAuth();
+  const orgId = authData?.organizations?.[0]?.id;
   const [agent, setAgent] = useState<AgentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('General');
+
+  // Orden #49 · D5: canales conectados sin agente (aviso + acción de asignar).
+  const unassigned = useUnassignedChannels(orgId);
 
   useEffect(() => {
     if (!id) return;
@@ -72,6 +78,14 @@ export default function AgentDetailPage() {
       .catch((err) => setError(err.message || 'Error loading agent'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  async function handleAssigned() {
+    await unassigned.refresh();
+    if (id) {
+      const fresh = await getAgent(id);
+      setAgent(fresh);
+    }
+  }
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -102,6 +116,22 @@ export default function AgentDetailPage() {
             </div>
             <AgentStatusControl agent={agent} onUpdated={setAgent} />
           </div>
+
+          {/* Orden #49 · D5: aviso en el detalle del Agent (fuera de la pestaña Channels,
+              que muestra el suyo al lado de la acción de asignar). */}
+          {tab !== 'Channels' && unassigned.channels.length > 0 && (
+            <div className="space-y-3">
+              {unassigned.channels.map((channel) => (
+                <ChannelWithoutAgentNotice
+                  key={channel.id}
+                  channel={channel}
+                  agentId={agent.id}
+                  onAssigned={handleAssigned}
+                  testId="d5-notice-agent-detail"
+                />
+              ))}
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-1 border-b border-gray-800">
@@ -146,7 +176,11 @@ export default function AgentDetailPage() {
             )}
 
             {tab === 'Channels' && (
-              <AgentChannelsForm agent={agent} onSaved={setAgent} />
+              <AgentChannelsForm
+                agent={agent}
+                onSaved={setAgent}
+                unassignedChannels={unassigned.channels}
+              />
             )}
 
             {tab === 'Memory' && (

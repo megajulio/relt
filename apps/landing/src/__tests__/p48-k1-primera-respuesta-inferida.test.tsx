@@ -71,6 +71,7 @@ const overview = {
       },
       lastStep: 'primera respuesta',
       firstReplyAt: '2026-01-01T10:20:00.000Z',
+      firstReplySource: 'inferred',
     },
   ],
 };

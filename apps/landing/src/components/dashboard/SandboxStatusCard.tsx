@@ -1,6 +1,7 @@
 'use client';
 
 import { useSandboxStatus } from '@/lib/use-sandbox-status';
+import { D2_CONFLICT_TEXT, isD2Conflict } from '@/lib/orden49';
 
 interface SandboxStatusCardProps {
   orgId: string | undefined;
@@ -146,6 +147,24 @@ export function SandboxStatusCard({
                 </>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado: rechazo de D2 (el número ya está activo en otra cuenta de RELT)
+  if (isD2Conflict(data)) {
+    return (
+      <div className="bg-gray-900 border border-red-800 rounded-xl p-6" data-testid="d2-sandbox-status">
+        <div className="flex items-start gap-3">
+          <div className="text-red-400 text-xl">⚠</div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-white">WhatsApp Sandbox</h3>
+            <p className="text-sm text-gray-300 mt-1">{D2_CONFLICT_TEXT}</p>
+            <p className="text-xs text-gray-500 mt-2">
+              This sandbox cannot connect WhatsApp until the number is released from the other account.
+            </p>
           </div>
         </div>
       </div>

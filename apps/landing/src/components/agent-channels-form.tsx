@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   assignChannel,
   getAgent,
@@ -9,6 +9,8 @@ import {
   type AgentDetail,
   type PhoneNumberCatalogItem,
 } from '@/lib/agents';
+import { ChannelWithoutAgentNotice } from '@/components/dashboard/ChannelWithoutAgentNotice';
+import type { UnassignedChannel } from '@/lib/use-unassigned-channels';
 
 const selectCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed';
@@ -16,9 +18,12 @@ const selectCls =
 export default function AgentChannelsForm({
   agent,
   onSaved,
+  unassignedChannels,
 }: {
   agent: AgentDetail;
   onSaved: (a: AgentDetail) => void;
+  /** Orden #49 · D5: canales conectados sin agente (aviso + acción de asignar). */
+  unassignedChannels?: UnassignedChannel[];
 }) {
   const [catalog, setCatalog] = useState<PhoneNumberCatalogItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
@@ -28,12 +33,16 @@ export default function AgentChannelsForm({
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  useEffect(() => {
-    listPhoneNumbers()
+  const loadCatalog = useCallback(() => {
+    return listPhoneNumbers()
       .then(setCatalog)
       .catch(() => setCatalog([]))
       .finally(() => setLoadingCatalog(false));
   }, []);
+
+  useEffect(() => {
+    loadCatalog();
+  }, [loadCatalog]);
 
   // Resetear info/error cuando cambia el agent
   useEffect(() => {
@@ -87,8 +96,36 @@ export default function AgentChannelsForm({
     }
   }
 
+  async function handleNotifiedAssigned() {
+    setError(null);
+    setInfo(null);
+    try {
+      await loadCatalog();
+      const fresh = await getAgent(agent.id);
+      onSaved(fresh);
+      setInfo('Channel assigned successfully.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error assigning channel');
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Orden #49 · D5: canal conectado sin agente, con la acción de asignar. */}
+      {unassignedChannels && unassignedChannels.length > 0 && (
+        <div className="space-y-3">
+          {unassignedChannels.map((channel) => (
+            <ChannelWithoutAgentNotice
+              key={channel.id}
+              channel={channel}
+              agentId={agent.id}
+              onAssigned={handleNotifiedAssigned}
+              testId="d5-notice-channels"
+            />
+          ))}
+        </div>
+      )}
+
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
           {error}
