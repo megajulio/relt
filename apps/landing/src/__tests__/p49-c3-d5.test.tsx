@@ -1,8 +1,15 @@
 /**
  * Orden #49 · Bloque 3 · C3 — rótulo de D5.
  *
- * «Este número no tiene un agente asignado: responde el flujo genérico.» con la acción
- * directa de asignarlo, en las tres superficies: sandbox, Channels y detalle del Agent.
+ * «This number has no agent assigned: new conversations get the generic reply.»
+ * (literal de G3 de la Orden #51) con la acción directa de asignarlo, en las tres
+ * superficies: sandbox, Channels y detalle del Agent.
+ *
+ * La #49 pedía «Este número no tiene un agente asignado: responde el flujo genérico.»;
+ * G3 de la Orden #51 (D-50.4) lo corrige porque el worker resuelve el Agent por
+ * `conversations.agent_id`: lo genérico lo reciben las conversaciones NUEVAS y las
+ * existentes conservan su Agent. Las expectativas de comportamiento (tres superficies
+ * + acción de asignar) no cambian.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -109,12 +116,13 @@ describe('C3 · D5 — canal conectado sin agente', () => {
     );
 
     // H3-2: el texto visible va en el idioma del dashboard, igual que D2.
+    // G3 (#51): fiel al enrutamiento — lo genérico lo reciben las conversaciones NUEVAS.
     expect(D5_NO_AGENT_TEXT).toBe(
-      'This number has no agent assigned: the generic flow is replying.',
+      'This number has no agent assigned: new conversations get the generic reply.',
     );
     // El literal español de la orden se conserva (no se borra ni se parafrasea).
     expect(D5_NO_AGENT_TEXT_ORDER_LITERAL).toBe(
-      'Este número no tiene un agente asignado: responde el flujo genérico.',
+      'Este número no tiene un agente asignado: las conversaciones nuevas reciben la respuesta genérica.',
     );
     expect(screen.getByText(D5_NO_AGENT_TEXT)).toBeTruthy();
     expect(screen.queryByText(D5_NO_AGENT_TEXT_ORDER_LITERAL)).toBeNull();
