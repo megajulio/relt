@@ -73,7 +73,7 @@ vi.mock('@/lib/use-unassigned-channels', () => ({
   }),
 }));
 
-import { D5_NO_AGENT_TEXT } from '@/lib/orden49';
+import { D5_NO_AGENT_TEXT, D5_NO_AGENT_TEXT_ORDER_LITERAL } from '@/lib/orden49';
 import { ChannelWithoutAgentNotice } from '@/components/dashboard/ChannelWithoutAgentNotice';
 import AgentChannelsForm from '@/components/agent-channels-form';
 import SandboxPage from '@/app/dashboard/sandbox/page';
@@ -102,16 +102,22 @@ beforeEach(() => {
 });
 
 describe('C3 · D5 — canal conectado sin agente', () => {
-  it('T49-C3-D5-1 · el texto es EXACTO y la acción asigna al Agent', async () => {
+  it('T49-C3-D5-1 · el texto visible es el inglés exacto y la acción asigna al Agent', async () => {
     const onAssigned = vi.fn();
     render(
       <ChannelWithoutAgentNotice channel={channel} agentId="agent-1" onAssigned={onAssigned} />,
     );
 
+    // H3-2: el texto visible va en el idioma del dashboard, igual que D2.
     expect(D5_NO_AGENT_TEXT).toBe(
+      'This number has no agent assigned: the generic flow is replying.',
+    );
+    // El literal español de la orden se conserva (no se borra ni se parafrasea).
+    expect(D5_NO_AGENT_TEXT_ORDER_LITERAL).toBe(
       'Este número no tiene un agente asignado: responde el flujo genérico.',
     );
     expect(screen.getByText(D5_NO_AGENT_TEXT)).toBeTruthy();
+    expect(screen.queryByText(D5_NO_AGENT_TEXT_ORDER_LITERAL)).toBeNull();
     expect(screen.getByText(channel.phoneNumber)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /assign to this agent/i }));
