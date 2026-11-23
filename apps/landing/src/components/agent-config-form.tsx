@@ -16,6 +16,8 @@ import {
   type ModelCatalogItem,
   type ModelErrorTarget,
 } from '@/lib/models';
+import BusinessInstructions from '@/components/business-instructions';
+import { countChars, MAX_BUSINESS_INSTRUCTIONS } from '@/lib/count-chars';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -85,6 +87,9 @@ function AgentConfigFormContent({
     responseModel !== originalModel.responseModel ||
     tone !== original.tone ||
     systemPrompt !== original.systemPrompt;
+
+  // D4 (#57 / ANEXO-57-G · G-4.3): máximo 4000 code points. Con más, Guardar se deshabilita (T57-15).
+  const overLimit = countChars(systemPrompt) > MAX_BUSINESS_INSTRUCTIONS;
 
   async function handleSave() {
     setError(null);
@@ -231,13 +236,13 @@ function AgentConfigFormContent({
         </Field>
       </div>
 
+      {/* D4 (#57): el prompt de sistema se edita como «Instrucciones del negocio». Se conserva
+          la etiqueta de sección «System prompt» del formulario de producción (arnés ya existente). */}
       <Field label="System prompt">
-        <textarea
-          rows={6}
-          className={inputCls}
+        <BusinessInstructions
           value={systemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          placeholder="Instrucciones de sistema del agent..."
+          onChange={setSystemPrompt}
+          className={inputCls}
         />
       </Field>
 
@@ -251,7 +256,7 @@ function AgentConfigFormContent({
         </button>
         <button
           onClick={handleSave}
-          disabled={!dirty || saving}
+          disabled={!dirty || saving || overLimit}
           className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {saving ? 'Saving...' : 'Save changes'}

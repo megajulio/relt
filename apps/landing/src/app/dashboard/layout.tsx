@@ -11,6 +11,7 @@ import { isPlatformAdmin } from '@/lib/platform';
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Overview', exact: true },
   { href: '/dashboard/agents', label: 'Agents' },
+  { href: '/dashboard/skills', label: 'Skills' },
   { href: '/dashboard/api-keys', label: 'API Keys' },
   { href: '/dashboard/activity', label: 'Activity' },
   { href: '/dashboard/quickstart', label: 'Quickstart' },

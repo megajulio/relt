@@ -11,6 +11,8 @@ interface ApiError {
   detail?: string;
   code?: string;
   field?: string;
+  /** Metadatos del RFC 7807 (`skill_in_use` -> `{ agents }`), #57 D2. */
+  meta?: { agents?: number };
   instance?: string;
 }
 
@@ -49,7 +51,7 @@ async function request<T>(
 
     const requestError = new Error(
       error.detail || `HTTP ${response.status}`,
-    ) as Error & { status?: number; code?: string; field?: ModelErrorField };
+    ) as Error & { status?: number; code?: string; field?: ModelErrorField; meta?: { agents?: number } };
 
     requestError.status = response.status;
     if (typeof error.code === 'string') {
@@ -57,6 +59,9 @@ async function request<T>(
     }
     if (isModelErrorField(error.field)) {
       requestError.field = error.field;
+    }
+    if (error.meta) {
+      requestError.meta = error.meta;
     }
 
     throw requestError;

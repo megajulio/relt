@@ -5,14 +5,21 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { createAgent, type CreateAgentInput } from '@/lib/agents';
-import { listSkills, type SkillListItem } from '@/lib/skills';
+import { listSkills } from '@/lib/skills';
 import { buildCreateModelConfig, type ModelStrategyChoice } from '@/lib/model-selection';
 import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem, type ModelErrorTarget } from '@/lib/models';
+import SkillSelect from '@/components/skill-select';
+import BusinessInstructions, {
+  BUSINESS_INSTRUCTIONS_TEMPLATE,
+} from '@/components/business-instructions';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
 
 const labelCls = 'block text-sm font-medium text-gray-400 mb-1';
+
+/** Opción del selector de skill (D5): nombre + capacidades (si el listado trae las tools). */
+type SkillOption = { name: string; tools?: string[] };
 
 export default function CreateAgentPage() {
   const router = useRouter();
@@ -22,14 +29,14 @@ export default function CreateAgentPage() {
   const [key, setKey] = useState('');
   const [defaultSkill, setDefaultSkill] = useState('general');
   const [status, setStatus] = useState<'active' | 'paused' | 'archived'>('active');
-  const [systemPrompt, setSystemPrompt] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState(BUSINESS_INSTRUCTIONS_TEMPLATE);
   const [strategy, setStrategy] = useState<ModelStrategyChoice>('auto');
   const [reasoningModel, setReasoningModel] = useState('');
   const [responseModel, setResponseModel] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<ModelErrorTarget>(null);
-  const [skills, setSkills] = useState<SkillListItem[]>([]);
+  const [skills, setSkills] = useState<SkillOption[]>([]);
   const [skillsLoading, setSkillsLoading] = useState(true);
   const [skillsError, setSkillsError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelCatalogItem[]>([]);
@@ -37,11 +44,13 @@ export default function CreateAgentPage() {
   useEffect(() => {
     let cancelled = false;
 
+    // El selector de skill (D5) muestra las capacidades de cada skill: `listSkills` trae las
+    // tools de cada una (detalle para las de RELT; `allowed_tools` para las de org).
     listSkills()
       .then((items) => {
         if (cancelled) return;
 
-        setSkills(items);
+        setSkills(items.map((item) => ({ name: item.name, tools: item.tools })));
         setSkillsError(null);
 
         if (!items.some((skill) => skill.name === 'general')) {
@@ -165,27 +174,16 @@ export default function CreateAgentPage() {
           <p className="text-xs text-gray-500 mt-1">Unique identifier (lowercase, hyphens)</p>
         </div>
 
-        {/* Default Skill */}
+        {/* Default Skill (D5): con las capacidades de cada skill */}
         <div>
           <label className={labelCls}>Default Skill</label>
-          <select
+          <SkillSelect
+            skills={skills.length ? skills : [{ name: defaultSkill }]}
             value={defaultSkill}
-            onChange={(e) => setDefaultSkill(e.target.value)}
-            className={inputCls}
+            onChange={setDefaultSkill}
             disabled={saving || skillsLoading || !!skillsError}
-          >
-            {skillsLoading ? (
-              <option value="general">Loading skills...</option>
-            ) : skills.length === 0 ? (
-              <option value="general">Skills unavailable</option>
-            ) : (
-              skills.map((skill) => (
-                <option key={skill.name} value={skill.name}>
-                  {skill.name}
-                </option>
-              ))
-            )}
-          </select>
+            className={inputCls}
+          />
           {skillsError && (
             <p className="text-xs text-red-400 mt-1">{skillsError}</p>
           )}
@@ -206,18 +204,13 @@ export default function CreateAgentPage() {
           </select>
         </div>
 
-        {/* System Prompt */}
-        <div>
-          <label className={labelCls}>System Prompt</label>
-          <textarea
-            value={systemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
-            placeholder="You are a helpful support assistant..."
-            className={inputCls}
-            rows={4}
-            disabled={saving}
-          />
-        </div>
+        {/* Instrucciones del negocio (D4): reutiliza config.systemPrompt */}
+        <BusinessInstructions
+          value={systemPrompt}
+          onChange={setSystemPrompt}
+          disabled={saving}
+          className={inputCls}
+        />
 
         {/* Model Strategy */}
         <div>

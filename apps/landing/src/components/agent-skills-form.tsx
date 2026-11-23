@@ -1,13 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  getAgent,
-  listSkills,
-  patchAgentConfig,
-  type AgentDetail,
-  type SkillCatalogItem,
-} from '@/lib/agents';
+import { getAgent, patchAgentConfig, type AgentDetail } from '@/lib/agents';
+import { listSkills, type SkillListItem } from '@/lib/skills';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -19,7 +14,7 @@ export default function AgentSkillsForm({
   agent: AgentDetail;
   onSaved: (a: AgentDetail) => void;
 }) {
-  const [catalog, setCatalog] = useState<SkillCatalogItem[]>([]);
+  const [catalog, setCatalog] = useState<SkillListItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [skill, setSkill] = useState(agent.config.skillBinding?.skill ?? agent.defaultSkill ?? '');
   const [mode, setMode] = useState<'automatic' | 'pinned'>(
@@ -49,19 +44,21 @@ export default function AgentSkillsForm({
   const dirty =
     skill !== originalSkill || mode !== originalMode || (mode === 'pinned' && version.trim() !== originalVersion);
   const selected = catalog.find((s) => s.name === skill);
+  const isOrg = selected?.kind === 'org';
 
   function handleSkillChange(next: string) {
     setSkill(next);
-    if (mode === 'pinned') {
-      const item = catalog.find((s) => s.name === next);
-      if (item) setVersion(item.latestVersion);
+    const item = catalog.find((s) => s.name === next);
+    // A-7: para una skill de org NO se ofrece fijar version.
+    if (mode === 'pinned' && item && item.kind === 'repo') {
+      setVersion(item.latest_version);
     }
   }
 
   function handleModeChange(nextMode: 'automatic' | 'pinned') {
     setMode(nextMode);
-    if (nextMode === 'pinned' && selected) {
-      setVersion(selected.latestVersion);
+    if (nextMode === 'pinned' && selected && selected.kind === 'repo') {
+      setVersion(selected.latest_version);
     }
   }
 
@@ -74,15 +71,15 @@ export default function AgentSkillsForm({
     }
     setSaving(true);
     try {
-      const v = mode === 'pinned' ? version.trim() : '';
+      const v = mode === 'pinned' && !isOrg ? version.trim() : '';
       await patchAgentConfig(agent.id, {
         skillBinding: v ? { skill, version: v } : { skill },
       });
       const fresh = await getAgent(agent.id);
       onSaved(fresh);
       setSaved(true);
-    } catch (err: any) {
-      setError(err?.message || 'Error al guardar el skill binding');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar el skill binding');
     } finally {
       setSaving(false);
     }
@@ -115,57 +112,63 @@ export default function AgentSkillsForm({
           <option value="">— seleccionar —</option>
           {catalog.map((s) => (
             <option key={s.name} value={s.name}>
-              {s.name}
+              {s.name} {s.kind === 'repo' ? '(De RELT)' : '(De tu organización)'}
             </option>
           ))}
         </select>
       </div>
 
-      <div className="space-y-3">
-        <div className="text-sm text-gray-400 mb-1.5">Skill Version</div>
-        <div className="space-y-2">
-          <label className="flex items-start gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="versionMode"
-              value="automatic"
-              checked={mode === 'automatic'}
-              onChange={() => handleModeChange('automatic')}
-              className="mt-1 w-4 h-4 accent-blue-600"
-            />
-            <div className="flex-1">
-              <div className="text-sm text-gray-200">Automática</div>
-              <div className="text-xs text-gray-500 mt-0.5">
-                Usa la versión resuelta por el sistema (latest).
-              </div>
-            </div>
-          </label>
-          <label className="flex items-start gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="versionMode"
-              value="pinned"
-              checked={mode === 'pinned'}
-              onChange={() => handleModeChange('pinned')}
-              className="mt-1 w-4 h-4 accent-blue-600"
-            />
-            <div className="flex-1">
-              <div className="text-sm text-gray-200 mb-1.5">Fijar versión</div>
-              <select
-                className={inputCls + ' disabled:opacity-40 disabled:cursor-not-allowed'}
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
-                disabled={mode !== 'pinned'}
-              >
-                {selected && <option value={selected.latestVersion}>v{selected.latestVersion} (latest)</option>}
-                {version && version !== selected?.latestVersion && (
-                  <option value={version}>v{version}</option>
-                )}
-              </select>
-            </div>
-          </label>
+      {isOrg ? (
+        <div className="text-xs text-gray-500">
+          Las skills de tu organización no se fijan a una versión.
         </div>
-      </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="text-sm text-gray-400 mb-1.5">Skill Version</div>
+          <div className="space-y-2">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="versionMode"
+                value="automatic"
+                checked={mode === 'automatic'}
+                onChange={() => handleModeChange('automatic')}
+                className="mt-1 w-4 h-4 accent-blue-600"
+              />
+              <div className="flex-1">
+                <div className="text-sm text-gray-200">Automática</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  Usa la versión resuelta por el sistema (latest).
+                </div>
+              </div>
+            </label>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="versionMode"
+                value="pinned"
+                checked={mode === 'pinned'}
+                onChange={() => handleModeChange('pinned')}
+                className="mt-1 w-4 h-4 accent-blue-600"
+              />
+              <div className="flex-1">
+                <div className="text-sm text-gray-200 mb-1.5">Fijar versión</div>
+                <select
+                  className={inputCls + ' disabled:opacity-40 disabled:cursor-not-allowed'}
+                  value={version}
+                  onChange={(e) => setVersion(e.target.value)}
+                  disabled={mode !== 'pinned'}
+                >
+                  {selected && <option value={selected.latest_version}>v{selected.latest_version} (latest)</option>}
+                  {version && version !== selected?.latest_version && (
+                    <option value={version}>v{version}</option>
+                  )}
+                </select>
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
 
       {loadingCatalog && <div className="text-sm text-gray-500">Cargando catálogo de skills...</div>}
 
@@ -173,8 +176,8 @@ export default function AgentSkillsForm({
         <div className="bg-gray-950 border border-gray-800 rounded-lg p-4 space-y-3">
           <div className="text-sm text-gray-300">{selected.description}</div>
           <div className="flex items-center gap-4 text-xs text-gray-500">
-            <span>Latest: v{selected.latestVersion}</span>
-            <span>{selected.toolsCount} tools</span>
+            <span>Latest: v{selected.latest_version}</span>
+            <span>{selected.tools_count} tools</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {selected.permissions.map((p) => (
