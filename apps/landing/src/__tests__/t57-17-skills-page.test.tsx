@@ -37,8 +37,8 @@ describe('T57-17 · página de skills', () => {
 
   it('las skills del repositorio aparecen como De RELT y de solo lectura', async () => {
     render(<SkillsPage />);
-    await waitFor(() => expect(screen.queryByText('De RELT')).not.toBeNull());
-    expect(screen.queryByText('Solo lectura')).not.toBeNull();
+    await waitFor(() => expect(screen.queryAllByText('De RELT').length).toBeGreaterThan(0));
+    expect(screen.queryAllByText('Solo lectura').length).toBeGreaterThan(0);
     expect(screen.queryAllByText('general').length).toBeGreaterThan(0);
   });
 
