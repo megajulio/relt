@@ -117,7 +117,7 @@ export default function AgentMemoryForm({
       <div className="space-y-4">
         <Toggle
           label="Short-term memory"
-          hint="Ventana de mensajes recientes inyectada al contexto del LLM"
+          hint="Si está apagado, el modelo no recibe mensajes previos."
           checked={stEnabled}
           onChange={setStEnabled}
         />
@@ -137,7 +137,7 @@ export default function AgentMemoryForm({
         </div>
         <Toggle
           label="Summary generation"
-          hint="Resumen acumulativo de la conversación para contexto de largo plazo"
+          hint="Si está apagado, el resumen no se lee ni se genera."
           checked={sumEnabled}
           onChange={setSumEnabled}
         />
