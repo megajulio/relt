@@ -23,11 +23,20 @@ function pluralKey(locale: Locale, key: string, count: number): string {
   return `${key}.${category}`;
 }
 
+/**
+ * Modo estricto: con él, una clave inexistente LANZA (lo activa `src/__tests__/setup.ts`).
+ * Sin él (producción) se muestra la clave, nunca un texto vacío (ANEXO-62-A · D6).
+ * Es una bandera explícita y no una variable de entorno: el panel no añade ninguna.
+ */
+let strictTranslations = false;
+
+export function setStrictTranslations(value: boolean): void {
+  strictTranslations = value;
+}
+
 function render(value: unknown, key: string, params: Params): string {
   if (typeof value !== 'string' || value.length === 0) {
-    // En los tests, una clave inexistente falla; en producción se muestra la clave
-    // (nunca un texto vacío), tal como pide el ANEXO-62-A (D6).
-    if (process.env.NODE_ENV === 'test') {
+    if (strictTranslations) {
       throw new Error(`[i18n] clave inexistente o vacía: ${key}`);
     }
     return key;

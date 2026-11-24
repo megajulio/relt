@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import enJson from '@/i18n/messages/en.json';
 import esJson from '@/i18n/messages/es.json';
+import { translate } from '@/i18n/catalog';
 
 const en = enJson as Record<string, string>;
 const es = esJson as Record<string, string>;
@@ -56,6 +57,10 @@ describe('T62-1 · catálogos es/en', () => {
       expect(es[`${base}.one`], `es ${base}.one`).toBeTruthy();
       expect(es[`${base}.other`], `es ${base}.other`).toBeTruthy();
     }
+  });
+
+  it('una clave inexistente falla en el test (D6)', () => {
+    expect(() => translate('es', 'no.existe.esta.clave')).toThrow(/clave inexistente/);
   });
 
   it('las claves están agrupadas por pantalla', () => {
