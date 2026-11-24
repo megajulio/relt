@@ -13,6 +13,7 @@ import AgentToolsForm from '@/components/agent-tools-form';
 import AgentMemoryForm from '@/components/agent-memory-form';
 import AgentChannelsForm from '@/components/agent-channels-form';
 import AgentStatusControl from '@/components/agent-status-control';
+import { useT } from '@/i18n/provider';
 
 const TABS = ['General', 'Configuration', 'Skills', 'Tools', 'Channels', 'Memory'] as const;
 type Tab = (typeof TABS)[number];
@@ -56,6 +57,7 @@ function Chip({ children }: { children: React.ReactNode }) {
 }
 
 export default function AgentDetailPage() {
+  const t = useT();
   const params = useParams();
   const id = params.id as string;
   const { data: authData } = useDashboardAuth();
@@ -91,12 +93,12 @@ export default function AgentDetailPage() {
     <div className="max-w-4xl space-y-6">
       {/* Back link */}
       <Link href="/dashboard/agents" className="text-sm text-blue-400 hover:text-blue-300">
-        ← Back to Agents
+        {t("agents.detail.back-to-agents")}
       </Link>
 
       {loading && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center text-gray-400">
-          Loading agent...
+          {t("agents.detail.loading-agent")}
         </div>
       )}
 

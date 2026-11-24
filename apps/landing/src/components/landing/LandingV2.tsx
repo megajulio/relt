@@ -1,35 +1,22 @@
+'use client';
+
 import Link from 'next/link';
 import AgentDemo from './AgentDemo';
 import Build from './Build';
 import Observe from './Observe';
 import Developers from './Developers';
-
-const capabilities = [
-  { title: 'Skills', text: 'Versioned capabilities that define what your agent knows how to do.' },
-  { title: 'Tools', text: 'Connect real actions such as search, quotes, CRM operations, and APIs.' },
-  { title: 'Memory', text: 'Keep useful conversational and customer context across interactions.' },
-  { title: 'Policies', text: 'Control what an agent is allowed to execute before tools run.' },
-  { title: 'Multimodal', text: 'Work with text, audio, images, video, and documents.' },
-  { title: 'Execution', text: 'Trace every agent run from intent to action and response.' },
-];
-
-const developerItems = [
-  ['API', 'Send and receive WhatsApp messages through one API.'],
-  ['Webhooks', 'Receive reliable event delivery from your conversations.'],
-  ['SDK', 'Build integrations directly into your application.'],
-  ['n8n', 'Coming in the developer platform.'],
-  ['MCP', 'Coming in the developer platform.'],
-  ['Embeds', 'Coming in the developer platform.'],
-];
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { useT } from '@/i18n/provider';
 
 function Nav() {
+  const t = useT();
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-4 lg:px-10">
         <Link href="/" className="text-2xl font-bold tracking-tight text-white">
           <img
   src="/images/relt-logo.png"
-  alt="Relt Logo"
+  alt={t("landing.relt-logo")}
   width={150}
   height={32}
  
@@ -38,25 +25,29 @@ function Nav() {
         </Link>
 
         <nav className="hidden items-center gap-15 text-sm text-slate-20 md:flex">
-          <a href="#product" className="transition hover:text-white">Product</a>
-          <a href="#agents" className="transition hover:text-white">Agents</a>
-          <a href="#developers" className="transition hover:text-white">Developers</a>
-          <a href="#pricing" className="transition hover:text-white">Pricing</a>
-          <a href="/login" className="transition hover:text-white">Login</a>
+          <a href="#product" className="transition hover:text-white">{t("landing.product")}</a>
+          <a href="#agents" className="transition hover:text-white">{t("landing.agents")}</a>
+          <a href="#developers" className="transition hover:text-white">{t("landing.developers")}</a>
+          <a href="#pricing" className="transition hover:text-white">{t("landing.pricing")}</a>
+          <a href="/login" className="transition hover:text-white">{t("landing.login")}</a>
         </nav>
 
-        <a
-          href="/register"
-          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500"
-        >
-          Start free
-        </a>
+        <div className="flex items-center gap-4">
+          <LanguageSwitcher />
+          <a
+            href="/register"
+            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500"
+          >
+            {t("landing.start-free")}
+          </a>
+        </div>
       </div>
     </header>
   );
 }
 
 function Hero() {
+  const t = useT();
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_58%_10%,rgba(37,99,235,0.18),transparent_37%)]" />
@@ -65,20 +56,20 @@ function Hero() {
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(380px,0.75fr)_minmax(0,1.7fr)] lg:gap-12 xl:gap-16">
           <div>
             <div className="mb-7 inline-flex items-center rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">
-              AI agents · WhatsApp · Production
+              {t("landing.ai-agents-whatsapp-production")}
             </div>
 
           
 <h1 className="text-4xl font-semibold leading-[1.04] tracking-[-0.03em] text-white sm:text-5xl lg:text-[52px] xl:text-[60px]">
-  Build <span className="text-blue-500">AI agents</span> that actually do the work on{' '}
-<span className="text-blue-500">WhatsApp.</span>
+  {t("landing.build")} <span className="text-blue-500">{t("landing.ai-agents")}</span> {t("landing.that-actually-do-the-work-on")}{' '}
+<span className="text-blue-500">{t("landing.whatsapp")}</span>
 
 </h1>
 
 
 
             <p className="mt-7 max-w-xl text-lg leading-8 text-slate-400">
-              RELT helps you build, deploy and monitor AI agents that handle real conversations, automate business processes and run in production — all through WhatsApp.
+              {t("landing.relt-helps-you-build-deploy-and-monitor-ai-agents-that-h")}
             </p>
 
             <div className="mt-10 flex flex-wrap gap-4">
@@ -86,21 +77,21 @@ function Hero() {
                 href="/register"
                 className="rounded-lg bg-blue-600 px-7 py-3.5 font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500"
               >
-                Start free
+                {t("landing.start-free")}
               </a>
 
               <a
                 href="#demo"
                 className="rounded-lg border border-white/15 px-7 py-3.5 font-semibold text-slate-200 transition hover:border-white/30 hover:bg-white/5"
               >
-                See it in action
+                {t("landing.see-it-in-action")}
               </a>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-500">
-              <span>Sandbox available</span>
-              <span>Meta production ready</span>
-              <span>Provider-agnostic agents</span>
+              <span>{t("landing.sandbox-available")}</span>
+              <span>{t("landing.meta-production-ready")}</span>
+              <span>{t("landing.provider-agnostic-agents")}</span>
             </div>
           </div>
 
@@ -121,6 +112,7 @@ function Hero() {
 
 
  function Connect() {
+  const t = useT();
   return (
     <section
       id="product"
@@ -134,12 +126,12 @@ function Hero() {
           {/* Textos (Izquierda) */}
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">
-              Connect
+              {t("landing.connect")}
             </p>
 
             <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl">
               
-             Build in sandbox. Run the same <span className="text-blue-500">Agent </span>in <span className="text-blue-500">Production. </span> {' '}
+             {t("landing.build-in-sandbox-run-the-same")} <span className="text-blue-500">{t("landing.agent")} </span>{t("landing.in")} <span className="text-blue-500">{t("landing.production")} </span> {' '}
 
 
 
@@ -156,8 +148,7 @@ function Hero() {
             </h2>
 
             <p className="mt-5 text-lg leading-8 text-slate-400">
-              Test your agents quickly, then connect real business numbers
-              through Meta when you are ready.
+              {t("landing.test-your-agents-quickly-then-connect-real-business-numb")}
             </p>
           </div>
 
@@ -165,7 +156,7 @@ function Hero() {
           <div className="flex justify-center shrink-0 mt-8 lg:mt-0">
             <img
               src="/images/logo_celN.png"
-              alt="Relt Logo"
+              alt={t("landing.relt-logo")}
               width={350}
               height={350}
               className="w-full max-w-[300px] lg:max-w-[400px] h-auto object-contain"
@@ -176,7 +167,7 @@ function Hero() {
           <div className="flex justify-center shrink-0 mt-8 lg:mt-0">
             <img
               src="/images/meta.png"
-              alt="Relt Logo"
+              alt={t("landing.relt-logo")}
               width={350}
               height={350}
               className="w-full max-w-[300px] lg:max-w-[400px] h-auto object-contain"
@@ -201,7 +192,7 @@ function Hero() {
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-400" />
             </span>
 
-            Same Agent · Different Provider
+            {t("landing.same-agent-different-provider")}
           </div>
 
           <div className="h-px flex-1 bg-white/10" />
@@ -254,7 +245,7 @@ function Hero() {
             {/* Card header */}
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-blue-300">
-                SANDBOX
+                {t("landing.sandbox")}
               </span>
 
               <span
@@ -270,19 +261,18 @@ function Hero() {
                   text-blue-300
                 "
               >
-                Start here
+                {t("landing.start-here")}
               </span>
             </div>
 
             {/* Title */}
             <h3 className="mt-4 text-2xl font-semibold text-white">
-              Relt API
+              {t("landing.relt-api")}
             </h3>
 
             {/* Description */}
             <p className="mt-3 max-w-xl leading-7 text-slate-400">
-              Test your Agent, conversations, tools and runtime behavior
-              without touching production.
+              {t("landing.test-your-agent-conversations-tools-and-runtime-behavior")}
             </p>
 
             {/* CTA */}
@@ -301,7 +291,7 @@ function Hero() {
                   hover:text-blue-200
                 "
               >
-                Start in sandbox
+                {t("landing.start-in-sandbox")}
                 <span
                   aria-hidden="true"
                   className="
@@ -329,28 +319,28 @@ function Hero() {
               "
             >
               <div>
-                <span className="text-slate-600">agent</span>{" "}
+                <span className="text-slate-600">{t("landing.agent-2")}</span>{" "}
                 ={" "}
                 <span className="text-blue-300">
-                  sales-assistant@1.1.1
+                  {t("landing.sales-assistant-1-1-1")}
                 </span>
               </div>
 
               <div>
-                <span className="text-slate-600">provider</span>{" "}
-                = RELT
+                <span className="text-slate-600">{t("landing.provider")}</span>{" "}
+                {t("landing.relt")}
               </div>
 
               <div>
-                <span className="text-slate-600">mode</span>{" "}
-                = sandbox
+                <span className="text-slate-600">{t("landing.mode")}</span>{" "}
+                {t("landing.sandbox-2")}
               </div>
 
               <div>
-                <span className="text-slate-600">status</span>{" "}
+                <span className="text-slate-600">{t("landing.status")}</span>{" "}
                 ={" "}
                 <span className="text-emerald-400">
-                  connected
+                  {t("landing.connected")}
                 </span>
               </div>
             </div>
@@ -375,7 +365,7 @@ function Hero() {
             {/* Card header */}
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-blue-300">
-                PRODUCTION
+                {t("landing.production-2")}
               </span>
 
               <span
@@ -391,19 +381,18 @@ function Hero() {
                   text-emerald-300
                 "
               >
-                Go live
+                {t("landing.go-live")}
               </span>
             </div>
 
             {/* Title */}
             <h3 className="mt-4 text-2xl font-semibold text-white">
-              Meta Cloud API
+              {t("landing.meta-cloud-api")}
             </h3>
 
             {/* Description */}
             <p className="mt-3 max-w-xl leading-7 text-slate-400">
-              Connect real WhatsApp business numbers without rebuilding
-              your Agent or changing its runtime.
+              {t("landing.connect-real-whatsapp-business-numbers-without-rebuildin")}
             </p>
 
             {/* CTA */}
@@ -422,7 +411,7 @@ function Hero() {
                   hover:text-emerald-200
                 "
               >
-                Connect Meta
+                {t("landing.connect-meta")}
                 <span
                   aria-hidden="true"
                   className="
@@ -450,28 +439,28 @@ function Hero() {
               "
             >
               <div>
-                <span className="text-slate-600">agent</span>{" "}
+                <span className="text-slate-600">{t("landing.agent-2")}</span>{" "}
                 ={" "}
                 <span className="text-blue-300">
-                  sales-assistant@1.1.1
+                  {t("landing.sales-assistant-1-1-1")}
                 </span>
               </div>
 
               <div>
-                <span className="text-slate-600">provider</span>{" "}
-                = META
+                <span className="text-slate-600">{t("landing.provider")}</span>{" "}
+                {t("landing.meta")}
               </div>
 
               <div>
-                <span className="text-slate-600">mode</span>{" "}
-                = production
+                <span className="text-slate-600">{t("landing.mode")}</span>{" "}
+                {t("landing.production-3")}
               </div>
 
               <div>
-                <span className="text-slate-600">status</span>{" "}
+                <span className="text-slate-600">{t("landing.status")}</span>{" "}
                 ={" "}
                 <span className="text-emerald-400">
-                  authenticated
+                  {t("landing.authenticated")}
                 </span>
               </div>
             </div>
@@ -481,25 +470,25 @@ function Hero() {
         {/* Closing statement */}
         <div className="mt-8 flex flex-col items-center text-center">
           <p className="text-base font-medium text-slate-300">
-            One Agent. Two environments.{" "}
-            <span className="text-white">No rebuild.</span>
+            {t("landing.one-agent-two-environments")}{" "}
+            <span className="text-white">{t("landing.no-rebuild")}</span>
           </p>
 
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-slate-500">
-            <span>Same Skills</span>
+            <span>{t("landing.same-skills")}</span>
 
             <span className="text-slate-700">•</span>
 
-            <span>Same Tools</span>
+            <span>{t("landing.same-tools")}</span>
 
             <span className="text-slate-700">•</span>
 
-            <span>Same Runtime</span>
+            <span>{t("landing.same-runtime")}</span>
 
             <span className="text-slate-700">•</span>
 
             <span className="text-blue-300">
-              Different Provider
+              {t("landing.different-provider")}
             </span>
           </div>
         </div>
@@ -513,6 +502,7 @@ function Hero() {
 
 
 function Pricing() {
+  const t = useT();
   return (
     <section
       id="pricing"
@@ -522,16 +512,16 @@ function Pricing() {
         {/* Header */}
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">
-            Pricing
+            {t("landing.pricing")}
           </p>
 
           <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl">
-            Build your <span className="text-blue-500">Agent.</span>{' '}
-            Test it <span className="text-blue-500">Free.</span>
+            {t("landing.build-your")} <span className="text-blue-500">{t("landing.agent-3")}</span>{' '}
+            {t("landing.test-it")} <span className="text-blue-500">{t("landing.free")}</span>
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-400">
-            Create, test, and refine your AI Agent in the RELT sandbox for 10 days.
+            {t("landing.create-test-and-refine-your-ai-agent-in-the-relt-sandbox")}
           </p>
         </div>
 
@@ -544,11 +534,11 @@ function Pricing() {
             <div className="relative">
               <div className="flex items-center justify-between gap-4">
                 <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-400">
-                  DEVELOPER TRIAL
+                  {t("landing.developer-trial")}
                 </p>
 
                 <span className="rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-blue-300">
-                  10 DAYS FREE
+                  {t("landing.10-days-free")}
                 </span>
               </div>
 
@@ -557,13 +547,12 @@ function Pricing() {
                   $0
                 </span>
                 <span className="pb-1 text-sm text-slate-500">
-                  for 10 days
+                  {t("landing.for-10-days")}
                 </span>
               </div>
 
               <p className="mt-4 max-w-xl text-sm leading-6 text-slate-400">
-                Everything you need to create, test, and refine an AI Agent
-                before taking it to production.
+                {t("landing.everything-you-need-to-create-test-and-refine-an-ai-agen")}
               </p>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -590,7 +579,7 @@ function Pricing() {
 
               <div className="mt-7 border-t border-white/10 pt-5">
                 <p className="text-sm leading-6 text-slate-500">
-                  No billing during the trial. No credit card required.
+                  {t("landing.no-billing-during-the-trial-no-credit-card-required")}
                 </p>
               </div>
 
@@ -598,7 +587,7 @@ function Pricing() {
                 href="/register"
                 className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-500"
               >
-                Start free
+                {t("landing.start-free")}
                 <span aria-hidden="true">→</span>
               </a>
             </div>
@@ -607,16 +596,15 @@ function Pricing() {
           {/* Production */}
           <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-8 text-left sm:p-9">
             <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
-              PRODUCTION
+              {t("landing.production-2")}
             </p>
 
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white">
-              Ready for a real WhatsApp number?
+              {t("landing.ready-for-a-real-whatsapp-number")}
             </h3>
 
             <p className="mt-4 text-sm leading-6 text-slate-400">
-              Keep the Agent you built in the sandbox and take it to
-              production with Meta when you are ready.
+              {t("landing.keep-the-agent-you-built-in-the-sandbox-and-take-it-to-p")}
             </p>
 
             <div className="mt-8 space-y-4">
@@ -638,11 +626,11 @@ function Pricing() {
 
             <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.02] p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Production plans
+                {t("landing.production-plans")}
               </p>
 
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Production pricing will evolve as RELT expands.
+                {t("landing.production-pricing-will-evolve-as-relt-expands")}
               </p>
             </div>
 
@@ -650,7 +638,7 @@ function Pricing() {
               href="#product"
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-300 transition-colors hover:text-blue-200"
             >
-              See how it works
+              {t("landing.see-how-it-works")}
               <span aria-hidden="true">→</span>
             </a>
           </div>
@@ -660,19 +648,19 @@ function Pricing() {
         <div className="mx-auto mt-8 max-w-5xl rounded-xl border border-white/10 bg-slate-900/40 px-6 py-5">
           <div className="flex flex-col items-center justify-center gap-2 text-center sm:flex-row sm:gap-3">
             <span className="text-sm font-medium text-white">
-              Build once.
+              {t("landing.build-once")}
             </span>
 
             <span className="hidden text-slate-700 sm:inline">•</span>
 
             <span className="text-sm text-slate-400">
-              Test in the sandbox.
+              {t("landing.test-in-the-sandbox")}
             </span>
 
             <span className="hidden text-slate-700 sm:inline">•</span>
 
             <span className="text-sm text-slate-400">
-              Take your Agent to production.
+              {t("landing.take-your-agent-to-production")}
             </span>
           </div>
         </div>
@@ -682,22 +670,22 @@ function Pricing() {
 }
 
 function FinalCTA() {
+  const t = useT();
   return (
     <section id="start" className="border-t border-white/10 py-28 lg:py-36">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">
-            Build your agent
+            {t("landing.build-your-agent")}
           </p>
 
           <h2 className="mt-4 text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl">
            
-            Build your first <span className="text-blue-500">Agent. </span>Take it to <span className="text-blue-500">Production.</span> {' '}
+            {t("landing.build-your-first")} <span className="text-blue-500">{t("landing.agent-3")} </span>{t("landing.take-it-to")} <span className="text-blue-500">{t("landing.production")}</span> {' '}
           </h2>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-400">
-            Start in the sandbox, give your Agent the tools it needs, and move
-            to a real WhatsApp number when you are ready.
+            {t("landing.start-in-the-sandbox-give-your-agent-the-tools-it-needs")}
           </p>
 
           <div className="mt-10">
@@ -705,13 +693,13 @@ function FinalCTA() {
               href="/register"
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-7 py-3.5 font-semibold text-white transition hover:bg-blue-500"
             >
-              Start free
+              {t("landing.start-free")}
               <span aria-hidden="true">→</span>
             </a>
           </div>
 
           <p className="mt-8 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-600">
-            10 days free · Evolution sandbox · Meta production
+            {t("landing.10-days-free-evolution-sandbox-meta-production")}
           </p>
         </div>
       </div>
@@ -737,13 +725,3 @@ export default function LandingV2() {
     </main>
   );
 }
-
-
-     <img
-  src="/images/relt-logo.png"
-  alt="Relt Logo"
-  width={150}
-  height={32}
- 
-  className="h-13 w-auto"  
-/>

@@ -11,6 +11,7 @@ import {
 } from '@/lib/agents';
 import { ChannelWithoutAgentNotice } from '@/components/dashboard/ChannelWithoutAgentNotice';
 import type { UnassignedChannel } from '@/lib/use-unassigned-channels';
+import { useT } from '@/i18n/provider';
 
 const selectCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed';
@@ -25,6 +26,7 @@ export default function AgentChannelsForm({
   /** Orden #49 · D5: canales conectados sin agente (aviso + acción de asignar). */
   unassignedChannels?: UnassignedChannel[];
 }) {
+  const t = useT();
   const [catalog, setCatalog] = useState<PhoneNumberCatalogItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [selectedId, setSelectedId] = useState('');
@@ -139,19 +141,19 @@ export default function AgentChannelsForm({
 
       {/* Current bindings */}
       <div>
-        <div className="text-sm text-gray-400 mb-2">Current channel bindings</div>
+        <div className="text-sm text-gray-400 mb-2">{t("agents.channels.current-channel-bindings")}</div>
         {activeBindings.length === 0 ? (
           <div className="text-sm text-gray-500 py-6 text-center bg-gray-950 border border-gray-800 rounded-lg">
-            No channels assigned yet.
+            {t("agents.channels.no-channels-assigned-yet")}
           </div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-800">
-                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">Phone</th>
-                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">Default</th>
-                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="text-right px-4 py-2 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">{t("agents.channels.phone")}</th>
+                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">{t("agents.channels.default")}</th>
+                <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">{t("agents.channels.status")}</th>
+                <th className="text-right px-4 py-2 text-xs font-medium text-gray-500 uppercase">{t("agents.channels.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -161,7 +163,7 @@ export default function AgentChannelsForm({
                   <td className="px-4 py-3">
                     {b.isDefault ? (
                       <span className="px-2 py-0.5 rounded-md text-xs bg-blue-500/20 text-blue-300">
-                        Default
+                        {t("agents.channels.default")}
                       </span>
                     ) : (
                       <span className="text-xs text-gray-500">—</span>
@@ -190,15 +192,15 @@ export default function AgentChannelsForm({
 
       {/* Assign new */}
       <div className="border-t border-gray-800 pt-5">
-        <div className="text-sm text-gray-400 mb-3">Assign new channel</div>
+        <div className="text-sm text-gray-400 mb-3">{t("agents.channels.assign-new-channel")}</div>
 
         {loadingCatalog && (
-          <div className="text-sm text-gray-500">Loading catalog...</div>
+          <div className="text-sm text-gray-500">{t("agents.channels.loading-catalog")}</div>
         )}
 
         {!loadingCatalog && catalog.length === 0 && (
           <div className="text-sm text-gray-500 bg-gray-950 border border-gray-800 rounded-lg p-4">
-            No phone numbers available in this organization.
+            {t("agents.channels.no-phone-numbers-available-in-this-organization")}
           </div>
         )}
 
@@ -209,7 +211,7 @@ export default function AgentChannelsForm({
               value={selectedId}
               onChange={(e) => setSelectedId(e.target.value)}
             >
-              <option value="">— select a phone number —</option>
+              <option value="">{t("agents.channels.select-a-phone-number")}</option>
               {available.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.phoneNumber} ({p.provider} · {p.status})
@@ -217,7 +219,7 @@ export default function AgentChannelsForm({
               ))}
               {available.length === 0 && (
                 <option value="" disabled>
-                  All available phone numbers are already assigned
+                  {t("agents.channels.all-available-phone-numbers-are-already-assigned")}
                 </option>
               )}
             </select>
@@ -230,9 +232,9 @@ export default function AgentChannelsForm({
                 disabled={!selectedId}
                 className="w-4 h-4 accent-blue-600 disabled:opacity-40"
               />
-              <span className="text-sm text-gray-300">Assign as default</span>
+              <span className="text-sm text-gray-300">{t("agents.channels.assign-as-default")}</span>
               <span className="text-xs text-gray-500">
-                (this channel will route new conversations to this agent)
+                {t("agents.channels.this-channel-will-route-new-conversations-to-this-agent")}
               </span>
             </label>
 
@@ -247,9 +249,7 @@ export default function AgentChannelsForm({
             </div>
 
             <p className="text-xs text-gray-600">
-              Para cambiar el canal default, primero haz Unassign del canal default actual y
-              luego asigna otro nuevo con &quot;Assign as default&quot;. El índice único parcial
-              de F.7 garantiza un solo default por canal.
+              {t("agents.channels.para-cambiar-el-canal-default-primero-haz-unassign-del-c")}
             </p>
           </div>
         )}

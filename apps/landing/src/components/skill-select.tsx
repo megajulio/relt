@@ -1,6 +1,7 @@
 'use client';
 
 import { capabilitiesLabel } from '@/lib/skill-labels';
+import { useT } from '@/i18n/provider';
 
 /**
  * Orden #57 · Bloque 3-bis (ANEXO-57-G1) · D5 — selector de skill del alta.
@@ -22,10 +23,11 @@ export default function SkillSelect({
   disabled?: boolean;
   className?: string;
 }) {
+  const t = useT();
   return (
     <select
       id="default-skill"
-      aria-label="Default Skill"
+      aria-label={t("agents.select.default-skill")}
       className={className}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -35,7 +37,7 @@ export default function SkillSelect({
         const tools = skill.tools ?? [];
         return (
           <option key={skill.name} value={skill.name}>
-            {tools.length ? `${skill.name} — ${capabilitiesLabel(tools)}` : skill.name}
+            {tools.length ? `${skill.name} — ${capabilitiesLabel(t, tools)}` : skill.name}
           </option>
         );
       })}

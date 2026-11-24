@@ -10,8 +10,9 @@ import { buildCreateModelConfig, type ModelStrategyChoice } from '@/lib/model-se
 import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem, type ModelErrorTarget } from '@/lib/models';
 import SkillSelect from '@/components/skill-select';
 import BusinessInstructions, {
-  BUSINESS_INSTRUCTIONS_TEMPLATE,
+  BUSINESS_INSTRUCTIONS_TEMPLATE_KEY,
 } from '@/components/business-instructions';
+import { useT } from '@/i18n/provider';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -22,6 +23,7 @@ const labelCls = 'block text-sm font-medium text-gray-400 mb-1';
 type SkillOption = { name: string; tools?: string[] };
 
 export default function CreateAgentPage() {
+  const t = useT();
   const router = useRouter();
   useDashboardAuth();
 
@@ -29,7 +31,7 @@ export default function CreateAgentPage() {
   const [key, setKey] = useState('');
   const [defaultSkill, setDefaultSkill] = useState('general');
   const [status, setStatus] = useState<'active' | 'paused' | 'archived'>('active');
-  const [systemPrompt, setSystemPrompt] = useState(BUSINESS_INSTRUCTIONS_TEMPLATE);
+  const [systemPrompt, setSystemPrompt] = useState(() => t(BUSINESS_INSTRUCTIONS_TEMPLATE_KEY));
   const [strategy, setStrategy] = useState<ModelStrategyChoice>('auto');
   const [reasoningModel, setReasoningModel] = useState('');
   const [responseModel, setResponseModel] = useState('');
@@ -130,12 +132,12 @@ export default function CreateAgentPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <Link href="/dashboard/agents" className="text-sm text-blue-400 hover:text-blue-300">
-        ← Back to Agents
+        {t("agents.new.back-to-agents")}
       </Link>
 
       <div>
-        <h1 className="text-3xl font-bold text-white">Create Agent</h1>
-        <p className="text-gray-400 mt-1">Set up a new AI agent for your workspace.</p>
+        <h1 className="text-3xl font-bold text-white">{t("agents.new.create-agent")}</h1>
+        <p className="text-gray-400 mt-1">{t("agents.new.set-up-a-new-ai-agent-for-your-workspace")}</p>
       </div>
 
       {error && (
@@ -147,12 +149,12 @@ export default function CreateAgentPage() {
       <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
         {/* Name */}
         <div>
-          <label className={labelCls}>Name *</label>
+          <label className={labelCls}>{t("agents.new.name")}</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Support Agent"
+            placeholder={t("agents.new.support-agent")}
             className={inputCls}
             disabled={saving}
             required
@@ -161,22 +163,22 @@ export default function CreateAgentPage() {
 
         {/* Key */}
         <div>
-          <label className={labelCls}>Key *</label>
+          <label className={labelCls}>{t("agents.new.key")}</label>
           <input
             type="text"
             value={key}
             onChange={(e) => setKey(e.target.value)}
-            placeholder="support-agent"
+            placeholder={t("agents.new.support-agent-2")}
             className={inputCls}
             disabled={saving}
             required
           />
-          <p className="text-xs text-gray-500 mt-1">Unique identifier (lowercase, hyphens)</p>
+          <p className="text-xs text-gray-500 mt-1">{t("agents.new.unique-identifier-lowercase-hyphens")}</p>
         </div>
 
         {/* Default Skill (D5): con las capacidades de cada skill */}
         <div>
-          <label className={labelCls}>Default Skill</label>
+          <label className={labelCls}>{t("agents.new.default-skill")}</label>
           <SkillSelect
             skills={skills.length ? skills : [{ name: defaultSkill }]}
             value={defaultSkill}
@@ -191,16 +193,16 @@ export default function CreateAgentPage() {
 
         {/* Status */}
         <div>
-          <label className={labelCls}>Initial Status</label>
+          <label className={labelCls}>{t("agents.new.initial-status")}</label>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as 'active' | 'paused' | 'archived')}
             className={inputCls}
             disabled={saving}
           >
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="archived">Archived</option>
+            <option value="active">{t("agents.new.active")}</option>
+            <option value="paused">{t("agents.new.paused")}</option>
+            <option value="archived">{t("agents.new.archived")}</option>
           </select>
         </div>
 
@@ -214,34 +216,34 @@ export default function CreateAgentPage() {
 
         {/* Model Strategy */}
         <div>
-          <label className={labelCls}>Model Strategy</label>
+          <label className={labelCls}>{t("agents.new.model-strategy")}</label>
           <select
-            aria-label="Model strategy"
+            aria-label={t("agents.new.model-strategy-2")}
             aria-invalid={errorField === 'modelStrategy'}
             value={strategy}
             onChange={(e) => setStrategy(e.target.value as ModelStrategyChoice)}
             className={inputCls}
             disabled={saving}
           >
-            <option value="auto">Automático (RELT Auto)</option>
-            <option value="single">Single model</option>
-            <option value="dual">Dual (reasoning + response)</option>
+            <option value="auto">{t("agents.new.automatico-relt-auto")}</option>
+            <option value="single">{t("agents.new.single-model")}</option>
+            <option value="dual">{t("agents.new.dual-reasoning-response")}</option>
           </select>
         </div>
 
         {/* Reasoning Model (solo si dual) */}
         {strategy === 'dual' && (
           <div>
-            <label className={labelCls}>Reasoning Model</label>
+            <label className={labelCls}>{t("agents.new.reasoning-model")}</label>
             <select
-              aria-label="Reasoning model"
+              aria-label={t("agents.new.reasoning-model-2")}
               aria-invalid={errorField === 'reasoningModel'}
               value={reasoningModel}
               onChange={(e) => setReasoningModel(e.target.value)}
               className={inputCls}
               disabled={saving}
             >
-              <option value="">Seleccioná un modelo…</option>
+              <option value="">{t("agents.new.selecciona-un-modelo")}</option>
               {optionsForField(models, 'dual', 'reasoningModel', false).map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.id}
@@ -254,16 +256,16 @@ export default function CreateAgentPage() {
         {/* Response Model (single o dual) */}
         {strategy !== 'auto' && (
           <div>
-            <label className={labelCls}>Response Model</label>
+            <label className={labelCls}>{t("agents.new.response-model")}</label>
             <select
-              aria-label="Response model"
+              aria-label={t("agents.new.response-model-2")}
               aria-invalid={errorField === 'responseModel'}
               value={responseModel}
               onChange={(e) => setResponseModel(e.target.value)}
               className={inputCls}
               disabled={saving}
             >
-              <option value="">Seleccioná un modelo…</option>
+              <option value="">{t("agents.new.selecciona-un-modelo")}</option>
               {optionsForField(models, strategy, 'responseModel', false).map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.id}
@@ -291,7 +293,7 @@ export default function CreateAgentPage() {
             href="/dashboard/agents"
             className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium px-6 py-2 rounded-lg transition-colors"
           >
-            Cancel
+            {t("agents.new.cancel")}
           </Link>
         </div>
       </form>

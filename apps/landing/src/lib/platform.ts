@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { TFunction } from '@/i18n/types';
 
 /**
  * Orden #47 · Cliente del panel interno del dueño (SOLO LECTURA).
@@ -66,6 +67,7 @@ export interface PlatformClientsOverview {
   clients: PlatformClientRow[];
 }
 
+/** Identificadores del recorrido tal como los devuelve la API (claves del `steps`). */
 export const LAST_STEPS = [
   'registrada',
   'sandbox listo',
@@ -74,6 +76,19 @@ export const LAST_STEPS = [
   'canal con agente',
   'primera respuesta',
 ] as const;
+
+/**
+ * Orden #62 · ANEXO-62-A (D2): el panel no muestra el texto del backend; mapea cada
+ * identificador de paso a su clave del catálogo.
+ */
+const STEP_KEYS: Record<string, string> = {
+  registrada: 'platform.step.registrada',
+  'sandbox listo': 'platform.step.sandboxReady',
+  'número conectado': 'platform.step.numberConnected',
+  'agente creado': 'platform.step.agentCreated',
+  'canal con agente': 'platform.step.channelWithAgent',
+  'primera respuesta': 'platform.step.firstReply',
+};
 
 /**
  * K1 (Orden #48) · El sexto paso es una INFERENCIA, no un hecho: el esquema no
@@ -88,31 +103,34 @@ export const FIRST_REPLY_STEP = 'primera respuesta';
 /** Origen del dato de «primera respuesta» (Orden #49 · E2). */
 export type FirstReplySource = 'link' | 'inferred' | null;
 
-/** Regla literal de la inferencia (K1). Se muestra al usuario tal cual. */
-export const FIRST_REPLY_RULE =
-  'ejecución exitosa del Agent seguida de un mensaje saliente aceptado en la misma conversación dentro de 1 h; puede no ser la respuesta del Agent';
-
-/** Regla del dato cuando sale del vínculo (Orden #49 · D6/E2). */
-export const FIRST_REPLY_LINK_RULE =
-  'ejecución exitosa del Agent con un saliente aceptado vinculado a esa ejecución (misma organización y conversación)';
+/** Claves de las reglas (K1 y D6/E2) en el catálogo. */
+export const FIRST_REPLY_RULE_KEY = 'platform.firstReply.rule';
+export const FIRST_REPLY_LINK_RULE_KEY = 'platform.firstReply.linkRule';
 
 /**
- * Rótulo visible de un paso. El sexto se rotula «primera respuesta (inferida)»
- * salvo que el dato venga del vínculo, que entonces es «primera respuesta».
+ * Rótulo visible de un paso, en el idioma activo. El sexto se rotula «primera
+ * respuesta (inferida)» salvo que el dato venga del vínculo.
  */
-export function stepLabel(step: string, source?: FirstReplySource): string {
-  if (step !== FIRST_REPLY_STEP) return step;
-  return source === 'link' ? 'primera respuesta' : 'primera respuesta (inferida)';
+export function stepLabel(t: TFunction, step: string, source?: FirstReplySource): string {
+  if (step === FIRST_REPLY_STEP) {
+    return source === 'link'
+      ? t('platform.step.firstReply')
+      : t('platform.step.firstReplyInferred');
+  }
+  const key = STEP_KEYS[step];
+  return key ? t(key) : step;
 }
 
 /** Rótulo del dato histórico de primera respuesta. */
-export function firstReplyLabel(source?: FirstReplySource): string {
-  return source === 'link' ? 'primera respuesta' : 'primera respuesta (inferida)';
+export function firstReplyLabel(t: TFunction, source?: FirstReplySource): string {
+  return source === 'link'
+    ? t('platform.step.firstReply')
+    : t('platform.step.firstReplyInferred');
 }
 
 /** Regla que se muestra junto al dato histórico, según su origen. */
-export function firstReplyRule(source?: FirstReplySource): string {
-  return source === 'link' ? FIRST_REPLY_LINK_RULE : FIRST_REPLY_RULE;
+export function firstReplyRule(t: TFunction, source?: FirstReplySource): string {
+  return t(source === 'link' ? FIRST_REPLY_LINK_RULE_KEY : FIRST_REPLY_RULE_KEY);
 }
 
 /** ¿La sesión actual es de un administrador de plataforma? */

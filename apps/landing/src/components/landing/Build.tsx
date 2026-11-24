@@ -1,77 +1,74 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useT } from '@/i18n/provider';
 
+// Orden #62 · ANEXO-62-A (D3): los datos de módulo guardan claves del catálogo;
+// el texto se resuelve en el render con `t()` (`example` es técnico, no se traduce).
 const buildGroups = [
   {
     key: 'intelligence',
-    label: 'Intelligence',
+    labelKey: 'landing.build.group.intelligence',
     items: [
       {
         key: 'skills',
-        title: 'Skills',
-        text: 'Versioned capabilities that define what your Agent knows how to do.',
+        titleKey: 'landing.build.skills.title',
+        textKey: 'landing.build.skills.text',
         example: 'sales-assistant@1.1.1',
-        detail:
-          'Skills package reusable, versioned behavior so your Agent can specialize without changing the runtime.',
+        detailKey: 'landing.build.skills.detail',
       },
       {
         key: 'memory',
-        title: 'Memory',
-        text: 'Keep useful customer and conversation context across interactions.',
+        titleKey: 'landing.build.memory.title',
+        textKey: 'landing.build.memory.text',
         example: 'conversation.context',
-        detail:
-          'Memory preserves the context an Agent needs across messages and interactions.',
+        detailKey: 'landing.build.memory.detail',
       },
       {
         key: 'multimodal',
-        title: 'Multimodal',
-        text: 'Work with text, audio, images and documents in one Agent runtime.',
+        titleKey: 'landing.build.multimodal.title',
+        textKey: 'landing.build.multimodal.text',
         example: 'text · audio · image',
-        detail:
-          'One runtime can process different message types and normalize them before the Agent acts.',
+        detailKey: 'landing.build.multimodal.detail',
       },
     ],
   },
   {
     key: 'action',
-    label: 'Action',
+    labelKey: 'landing.build.group.action',
     items: [
       {
         key: 'tools',
-        title: 'Tools',
-        text: 'Connect real actions, APIs and business systems to your Agent.',
+        titleKey: 'landing.build.tools.title',
+        textKey: 'landing.build.tools.text',
         example: 'products.search()',
-        detail:
-          'Tools let the Agent move beyond conversation and execute real actions in your systems.',
+        detailKey: 'landing.build.tools.detail',
       },
     ],
   },
   {
     key: 'control',
-    label: 'Control',
+    labelKey: 'landing.build.group.control',
     items: [
       {
         key: 'policies',
-        title: 'Policies',
-        text: 'Control what an Agent is allowed to execute before tools run.',
+        titleKey: 'landing.build.policies.title',
+        textKey: 'landing.build.policies.text',
         example: 'policy.check → passed',
-        detail:
-          'Policies and permissions determine whether an Agent is authorized to execute an action.',
+        detailKey: 'landing.build.policies.detail',
       },
     ],
   },
   {
     key: 'execution',
-    label: 'Runtime',
+    labelKey: 'landing.build.group.runtime',
     items: [
       {
         key: 'execution',
-        title: 'Execution',
-        text: 'Trace every step from message to tool call, result and response.',
+        titleKey: 'landing.build.execution.title',
+        textKey: 'landing.build.execution.text',
         example: 'message → result',
-        detail:
-          'Execution connects intent, skills, tools, results and responses into an observable runtime flow.',
+        detailKey: 'landing.build.execution.detail',
       },
     ],
   },
@@ -79,34 +76,34 @@ const buildGroups = [
 
 type BuildItem = {
   key: string;
-  title: string;
-  text: string;
+  titleKey: string;
+  textKey: string;
   example: string;
-  detail: string;
+  detailKey: string;
 };
 type BuildKey = BuildItem['key'];
 
 const categoryStyles = {
   intelligence: {
-    label: 'text-blue-400',
+    color: 'text-blue-400',
     activeBorder: 'border-blue-400/40',
     activeBackground: 'bg-blue-400/[0.055]',
     glow: 'hover:shadow-[0_18px_60px_rgba(37,99,235,0.10)]',
   },
   action: {
-    label: 'text-violet-300',
+    color: 'text-violet-300',
     activeBorder: 'border-violet-400/35',
     activeBackground: 'bg-violet-400/[0.04]',
     glow: 'hover:shadow-[0_18px_60px_rgba(139,92,246,0.08)]',
   },
   control: {
-    label: 'text-amber-300',
+    color: 'text-amber-300',
     activeBorder: 'border-amber-400/30',
     activeBackground: 'bg-amber-400/[0.035]',
     glow: 'hover:shadow-[0_18px_60px_rgba(245,158,11,0.06)]',
   },
   execution: {
-    label: 'text-blue-300',
+    color: 'text-blue-300',
     activeBorder: 'border-blue-400/50',
     activeBackground: 'bg-blue-400/[0.07]',
     glow: 'hover:shadow-[0_18px_60px_rgba(37,99,235,0.14)]',
@@ -125,6 +122,7 @@ function ArchitectureTree({
   onSelect: (key: BuildKey) => void;
   selectedItem: BuildItem;
 }) {
+  const t = useT();
   const activeCat =
     buildGroups.find((g) => g.items.some((i) => i.key === selectedKey))?.key ?? '';
 
@@ -137,7 +135,7 @@ function ArchitectureTree({
         >
           ∙
         </span>
-        <span>Agent</span>
+        <span>{t("landing.build.agent")}</span>
       </div>
 
       <div className="ml-3 mt-5 border-l border-blue-400/25 pl-5 sm:ml-4 sm:pl-6">
@@ -153,7 +151,7 @@ function ArchitectureTree({
               activeCat === 'intelligence' ? 'text-blue-400 font-semibold' : 'text-slate-500'
             }`}
           >
-            intelligence
+            {t("landing.build.intelligence")}
           </div>
           <div className="mt-3 space-y-1.5">
             {(['skills', 'memory', 'multimodal'] as const).map((key) => {
@@ -175,7 +173,7 @@ function ArchitectureTree({
                   aria-pressed={active}
                 >
                   <span className="mr-2 text-slate-600">└</span>
-                  {item.title}
+                  {t(item.titleKey)}
                 </button>
               );
             })}
@@ -194,7 +192,7 @@ function ArchitectureTree({
               activeCat === 'action' ? 'text-violet-300 font-semibold' : 'text-slate-500'
             }`}
           >
-            action
+            {t("landing.build.action")}
           </div>
           <button
             type="button"
@@ -209,7 +207,7 @@ function ArchitectureTree({
             aria-pressed={selectedKey === 'tools'}
           >
             <span className="mr-2 text-slate-600">└</span>
-            Tools
+            {t("landing.build.tools")}
           </button>
         </div>
 
@@ -225,7 +223,7 @@ function ArchitectureTree({
               activeCat === 'control' ? 'text-amber-300 font-semibold' : 'text-slate-500'
             }`}
           >
-            control
+            {t("landing.build.control")}
           </div>
           <button
             type="button"
@@ -240,7 +238,7 @@ function ArchitectureTree({
             aria-pressed={selectedKey === 'policies'}
           >
             <span className="mr-2 text-slate-600">└</span>
-            Policies
+            {t("landing.build.policies")}
           </button>
         </div>
 
@@ -272,10 +270,10 @@ function ArchitectureTree({
               ].join(' ')}
               aria-hidden="true"
             />
-            Execution
+            {t("landing.build.execution")}
           </button>
           <p className="mt-2 font-sans text-xs leading-5 text-slate-500">
-            The observable runtime where the Agent turns context into action.
+            {t("landing.build.the-observable-runtime-where-the-agent-turns-context-int")}
           </p>
         </div>
       </div>
@@ -284,10 +282,10 @@ function ArchitectureTree({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[10px] uppercase tracking-[0.16em] text-slate-600">
-              Selected capability
+              {t("landing.build.selected-capability")}
             </p>
             <p className="mt-1 font-sans text-sm font-semibold text-white">
-              {selectedItem.title}
+              {t(selectedItem.titleKey)}
             </p>
           </div>
           <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 font-mono text-[10px] text-blue-300">
@@ -295,7 +293,7 @@ function ArchitectureTree({
           </span>
         </div>
         <p className="mt-3 font-sans text-xs leading-5 text-slate-500">
-          {selectedItem.detail}
+          {t(selectedItem.detailKey)}
         </p>
       </div>
     </div>
@@ -313,6 +311,7 @@ function CapabilityCard({
   active: boolean;
   onSelect: (key: BuildKey) => void;
 }) {
+  const t = useT();
   const styles = categoryStyles[group.key as keyof typeof categoryStyles];
   const isExecution = group.key === 'execution';
 
@@ -334,15 +333,15 @@ function CapabilityCard({
     >
       <div className="flex items-center justify-between gap-3">
         <span
-          className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${styles.label}`}
+          className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${styles.color}`}
         >
-          {group.label}
+          {t(group.labelKey)}
         </span>
 
         <div className="flex items-center gap-2">
           {isExecution && (
             <span className="rounded-full border border-blue-400/20 bg-blue-400/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-blue-300">
-              Core runtime
+              {t("landing.build.core-runtime")}
             </span>
           )}
 
@@ -352,7 +351,7 @@ function CapabilityCard({
               active ? 'text-blue-300 opacity-100' : 'opacity-0',
             ].join(' ')}
           >
-            Selected
+            {t("landing.build.selected")}
           </span>
 
           <span
@@ -367,9 +366,9 @@ function CapabilityCard({
         </div>
       </div>
 
-      <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
+      <h3 className="mt-3 text-lg font-semibold text-white">{t(item.titleKey)}</h3>
 
-      <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">{item.text}</p>
+      <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">{t(item.textKey)}</p>
 
       <div
         className={[
@@ -377,7 +376,7 @@ function CapabilityCard({
           active ? 'border-white/10 bg-black/25' : 'border-white/10 bg-black/20',
         ].join(' ')}
       >
-        <span className="text-slate-600">example</span>{' '}
+        <span className="text-slate-600">{t("landing.build.example")}</span>{' '}
         <span className={active || isExecution ? 'text-blue-300' : 'text-slate-300'}>
           {item.example}
         </span>
@@ -387,6 +386,7 @@ function CapabilityCard({
 }
 
 export default function Build() {
+  const t = useT();
   const [selectedKey, setSelectedKey] = useState<BuildKey>('skills');
 
   const allItems = useMemo(() => buildGroups.flatMap((group) => group.items), []);
@@ -407,7 +407,7 @@ export default function Build() {
         <div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">
-              Build
+              {t("landing.build.build")}
             </p>
 
             <h2
@@ -415,11 +415,11 @@ export default function Build() {
               className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl"
             >
               
-             Give your <span className="text-blue-500">Agent </span>everything it needs to act. {' '}
+             {t("landing.build.give-your")} <span className="text-blue-500">{t("landing.build.agent")} </span>{t("landing.build.everything-it-needs-to-act")} {' '}
             </h2>
 
             <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400 lg:text-lg lg:leading-8">
-              RELT combines agent intelligence with the controls required to execute real work safely.
+              {t("landing.build.relt-combines-agent-intelligence-with-the-controls-requi")}
             </p>
           </div>
 
@@ -427,7 +427,7 @@ export default function Build() {
 
         <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-slate-500">
           <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-          Click a capability to explore
+          {t("landing.build.click-a-capability-to-explore")}
         </div>
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:gap-14">
@@ -441,7 +441,7 @@ export default function Build() {
             {buildGroups.flatMap((group) =>
               group.items.map((item) => (
                 <CapabilityCard
-                  key={`${group.key}-${item.title}`}
+                  key={`${group.key}-${item.titleKey}`}
                   group={group}
                   item={item}
                   active={selectedKey === item.key}
@@ -460,7 +460,7 @@ export default function Build() {
                 : undefined
             }
           >
-            Intelligence
+            {t("landing.build.intelligence-2")}
           </span>
           <span className="text-slate-700">→</span>
           <span
@@ -470,7 +470,7 @@ export default function Build() {
                 : undefined
             }
           >
-            Action
+            {t("landing.build.action-2")}
           </span>
           <span className="text-slate-700">→</span>
           <span
@@ -480,7 +480,7 @@ export default function Build() {
                 : undefined
             }
           >
-            Control
+            {t("landing.build.control-2")}
           </span>
           <span className="text-slate-700">→</span>
           <span
@@ -490,7 +490,7 @@ export default function Build() {
                 : 'text-slate-400'
             }
           >
-            Observable execution
+            {t("landing.build.observable-execution")}
           </span>
         </div>
       </div>

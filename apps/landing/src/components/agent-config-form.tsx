@@ -18,6 +18,7 @@ import {
 } from '@/lib/models';
 import BusinessInstructions from '@/components/business-instructions';
 import { countChars, MAX_BUSINESS_INSTRUCTIONS } from '@/lib/count-chars';
+import { useT } from '@/i18n/provider';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -41,6 +42,7 @@ function AgentConfigFormContent({
   agent: AgentDetail;
   onSaved: (a: AgentDetail) => void;
 }) {
+  const t = useT();
   const initialModel = selectionFromConfig(agent.config);
   const [maxSteps, setMaxSteps] = useState<string>(String(agent.config.maxSteps ?? ''));
   const [strategy, setStrategy] = useState<ModelStrategyChoice>(initialModel.strategy);
@@ -147,7 +149,7 @@ function AgentConfigFormContent({
       )}
       {saved && !dirty && !error && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-sm text-green-300">
-          Configuración guardada correctamente.
+          {t("agents.config.configuracion-guardada-correctamente")}
         </div>
       )}
 
@@ -162,27 +164,27 @@ function AgentConfigFormContent({
         </Field>
         <Field label="Model strategy">
           <select
-            aria-label="Model strategy"
+            aria-label={t("agents.config.model-strategy")}
             aria-invalid={errorField === 'modelStrategy'}
             className={inputCls}
             value={strategy}
             onChange={(e) => setStrategy(e.target.value as ModelStrategyChoice)}
           >
-            <option value="auto">Automático (RELT Auto)</option>
-            <option value="single">single</option>
-            <option value="dual">dual</option>
+            <option value="auto">{t("agents.config.automatico-relt-auto")}</option>
+            <option value="single">{t("agents.config.single")}</option>
+            <option value="dual">{t("agents.config.dual")}</option>
           </select>
         </Field>
         {strategy === 'dual' && (
           <Field label="Reasoning model" hint="Aplica cuando strategy = dual">
             <select
-              aria-label="Reasoning model"
+              aria-label={t("agents.config.reasoning-model")}
               aria-invalid={errorField === 'reasoningModel'}
               className={inputCls}
               value={reasoningModel}
               onChange={(e) => setReasoningModel(e.target.value)}
             >
-              <option value="">Seleccioná un modelo…</option>
+              <option value="">{t("agents.config.selecciona-un-modelo")}</option>
               {modelOptionValues(
                 optionsForField(models, 'dual', 'reasoningModel', hasTools),
                 reasoningModel,
@@ -194,7 +196,7 @@ function AgentConfigFormContent({
             </select>
             {reasoningModel && !isModelInCatalog(models, reasoningModel) && (
               <p className="text-xs text-amber-400 mt-1">
-                El modelo guardado «{reasoningModel}» está fuera del catálogo aprobado.
+                {t("agents.config.el-modelo-guardado")}{reasoningModel}{t("agents.config.esta-fuera-del-catalogo-aprobado")}
               </p>
             )}
           </Field>
@@ -202,13 +204,13 @@ function AgentConfigFormContent({
         {strategy !== 'auto' && (
           <Field label="Response model">
             <select
-              aria-label="Response model"
+              aria-label={t("agents.config.response-model")}
               aria-invalid={errorField === 'responseModel'}
               className={inputCls}
               value={responseModel}
               onChange={(e) => setResponseModel(e.target.value)}
             >
-              <option value="">Seleccioná un modelo…</option>
+              <option value="">{t("agents.config.selecciona-un-modelo")}</option>
               {modelOptionValues(
                 optionsForField(models, strategy, 'responseModel', hasTools),
                 responseModel,
@@ -220,13 +222,13 @@ function AgentConfigFormContent({
             </select>
             {responseModel && !isModelInCatalog(models, responseModel) && (
               <p className="text-xs text-amber-400 mt-1">
-                El modelo guardado «{responseModel}» está fuera del catálogo aprobado.
+                {t("agents.config.el-modelo-guardado")}{responseModel}{t("agents.config.esta-fuera-del-catalogo-aprobado")}
               </p>
             )}
           </Field>
         )}
         <Field label="Tone">
-          <select aria-label="Tone" className={inputCls} value={tone} onChange={(e) => setTone(e.target.value)}>
+          <select aria-label={t("agents.config.tone")} className={inputCls} value={tone} onChange={(e) => setTone(e.target.value)}>
             {TONES.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -252,7 +254,7 @@ function AgentConfigFormContent({
           disabled={!dirty || saving}
           className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          Reset
+          {t("agents.config.reset")}
         </button>
         <button
           onClick={handleSave}
@@ -264,8 +266,7 @@ function AgentConfigFormContent({
       </div>
 
       <p className="text-xs text-gray-600">
-        Merge semantics: solo se envían los campos modificados. La validación final (Zod) y la
-        construcción de la Effective Configuration ocurren server-side.
+        {t("agents.config.merge-semantics-solo-se-envian-los-campos-modificados-la")}
       </p>
     </div>
   );

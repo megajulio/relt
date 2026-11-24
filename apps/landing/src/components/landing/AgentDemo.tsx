@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useT } from '@/i18n/provider';
 
 type Step = {
-  title: string;
+  /** Clave del catálogo (el texto se resuelve con `t()`). */
+  titleKey: string;
   detail: string;
   tool: string;
   code: string;
@@ -12,7 +14,7 @@ type Step = {
 // 6 líneas exactas, máx ~30 caracteres por línea: no se envuelven, no brincan.
 const STEPS: Step[] = [
   {
-    title: 'Intent detected',
+    titleKey: 'landing.demo.step.intent-detected.title',
     detail: 'place_order',
     tool: 'intent.classify',
     code: `POST /v1/intents/classify
@@ -23,7 +25,7 @@ const STEPS: Step[] = [
 → confidence: 0.97`,
   },
   {
-    title: 'Skill selected',
+    titleKey: 'landing.demo.step.skill-selected.title',
     detail: 'sales-assistant@1.1.1',
     tool: 'sales-assistant@1.1.1',
     code: `SELECT skill FROM runtime
@@ -34,7 +36,7 @@ WHERE name =
 → guardrails: ok`,
   },
   {
-    title: 'products.search',
+    titleKey: 'landing.demo.step.products-search.title',
     detail: '13ms',
     tool: 'products.search',
     code: `POST /v1/products/search
@@ -45,7 +47,7 @@ WHERE name =
 → 13ms`,
   },
   {
-    title: 'quotes.create',
+    titleKey: 'landing.demo.step.quotes-create.title',
     detail: '18ms',
     tool: 'quotes.create',
     code: `POST /v1/quotes
@@ -56,7 +58,7 @@ WHERE name =
 → 18ms`,
   },
   {
-    title: 'Quote created',
+    titleKey: 'landing.demo.step.quote-created.title',
     detail: 'COT-2026-000052',
     tool: 'runtime.result',
     code: `RESULT QUOTE_CREATED
@@ -67,7 +69,7 @@ WHERE name =
 → trace stored`,
   },
   {
-    title: 'Agent response',
+    titleKey: 'landing.demo.step.agent-response.title',
     detail: 'sent',
     tool: 'whatsapp.send',
     code: `POST /v1/messages/send
@@ -80,12 +82,12 @@ WHERE name =
 ];
 
 const TRACE = [
-  { label: 'Message', threshold: 0, lit: '◉', color: 'text-emerald-300' },
-  { label: 'Intent', threshold: 0, lit: '●', color: 'text-blue-300' },
-  { label: 'Skill', threshold: 1, lit: '●', color: 'text-blue-300' },
-  { label: 'Tool', threshold: 2, lit: '●', color: 'text-blue-300' },
-  { label: 'Result', threshold: 4, lit: '✓', color: 'text-emerald-300' },
-  { label: 'Response', threshold: 5, lit: '✓', color: 'text-emerald-300' },
+  { labelKey: 'landing.demo.trace.message', threshold: 0, lit: '◉', color: 'text-emerald-300' },
+  { labelKey: 'landing.demo.trace.intent', threshold: 0, lit: '●', color: 'text-blue-300' },
+  { labelKey: 'landing.demo.trace.skill', threshold: 1, lit: '●', color: 'text-blue-300' },
+  { labelKey: 'landing.demo.trace.tool', threshold: 2, lit: '●', color: 'text-blue-300' },
+  { labelKey: 'landing.demo.trace.result', threshold: 4, lit: '✓', color: 'text-emerald-300' },
+  { labelKey: 'landing.demo.trace.response', threshold: 5, lit: '✓', color: 'text-emerald-300' },
 ];
 
 const LAST = STEPS.length - 1;
@@ -99,9 +101,10 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 function WhatsAppPanel({ done }: { done: boolean }) {
+  const t = useT();
   return (
     <section
-      aria-label="WhatsApp conversation"
+      aria-label={t("landing.demo.whatsapp-conversation")}
       className="flex flex-col border-b border-white/10 lg:border-b-0 lg:border-r"
     >
       {/* Header estilo WhatsApp */}
@@ -111,23 +114,23 @@ function WhatsAppPanel({ done }: { done: boolean }) {
             <WhatsAppIcon className="h-5 w-5" />
           </span>
           <div>
-            <div className="text-sm font-semibold text-slate-100">Customer</div>
+            <div className="text-sm font-semibold text-slate-100">{t("landing.demo.customer")}</div>
             <div className="flex items-center gap-1.5 text-[11px] text-emerald-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
-              Online
+              {t("landing.demo.online")}
             </div>
           </div>
         </div>
-        <span className="text-[11px] text-slate-500">Now</span>
+        <span className="text-[11px] text-slate-500">{t("landing.demo.now")}</span>
       </div>
 
       {/* Viewport de chat: altura fija, anclado abajo como un chat real */}
       <div className="relative min-h-[268px] flex-1 overflow-hidden bg-[#0b141a] px-4 py-3">
 
         <div className="flex h-full flex-col gap-2">
-          <span className="self-center rounded-full bg-slate-900/70 px-2.5 py-0.5 text-[10px] text-slate-500">Today</span>
+          <span className="self-center rounded-full bg-slate-900/70 px-2.5 py-0.5 text-[10px] text-slate-500">{t("landing.demo.today")}</span>
           <div className="w-fit max-w-[85%] rounded-xl rounded-tl-sm bg-[#1f2c33] px-3.5 py-2.5">
-            <p className="text-sm leading-6 text-slate-100">Necesito 30 Camisetas Blancas.</p>
+            <p className="text-sm leading-6 text-slate-100">{t("landing.demo.necesito-30-camisetas-blancas")}</p>
             <div className="mt-0.5 text-right text-[10px] text-slate-500">10:24</div>
           </div>
 
@@ -138,15 +141,15 @@ function WhatsAppPanel({ done }: { done: boolean }) {
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-300 [animation-delay:150ms]" />
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-300 [animation-delay:300ms]" />
               </span>
-              <span className="whitespace-nowrap text-xs text-blue-300">Agent is processing…</span>
+              <span className="whitespace-nowrap text-xs text-blue-300">{t("landing.demo.agent-is-processing")}</span>
             </div>
           )}
 
           {done && (
             <div className="ml-auto w-fit max-w-[85%] rounded-xl rounded-tr-sm bg-blue-600 px-3.5 py-2.5 shadow-[0_0_18px_rgba(59,130,246,0.25)]">
-              <div className="mb-1 text-[11px] font-semibold text-blue-100">RELT Agent</div>
+              <div className="mb-1 text-[11px] font-semibold text-blue-100">{t("landing.demo.relt-agent")}</div>
               <p className="text-sm leading-6 text-white">
-                Tu cotización está lista🧐. ¿Deseas proceder con el pedido?
+                {t("landing.demo.tu-cotizacion-esta-lista-deseas-proceder-con-el-pedido")}
               </p>
               <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-blue-200">
                 10:24
@@ -175,7 +178,7 @@ function WhatsAppPanel({ done }: { done: boolean }) {
           <WhatsAppIcon className="h-4 w-4" />
         </span>
         <div className="flex flex-1 items-center justify-between rounded-full bg-slate-950/80 px-4 py-2">
-          <span className="truncate whitespace-nowrap text-xs text-slate-500">Type a message…</span>
+          <span className="truncate whitespace-nowrap text-xs text-slate-500">{t("landing.demo.type-a-message")}</span>
           <svg
             viewBox="0 0 24 24"
             className="h-4 w-4 text-slate-500"
@@ -212,6 +215,7 @@ function WhatsAppPanel({ done }: { done: boolean }) {
 }
 
 export default function AgentDemo() {
+  const t = useT();
   const [step, setStep] = useState(0);
   const [replayKey, setReplayKey] = useState(0);
   const [reduced, setReduced] = useState(false);
@@ -269,7 +273,7 @@ export default function AgentDemo() {
           <span className="h-3 w-3 rounded-full bg-amber-400" aria-hidden="true" />
           <span className="h-3 w-3 rounded-full bg-emerald-400" aria-hidden="true" />
           <h2 id="agent-demo-title" className="ml-3 text-xs font-semibold tracking-wide text-slate-300 sm:text-sm">
-            REAL AGENT DEMO
+            {t("landing.demo.real-agent-demo")}
           </h2>
         </div>
         <div
@@ -291,9 +295,9 @@ export default function AgentDemo() {
         <WhatsAppPanel done={done} />
 
         {/* Timeline */}
-        <section aria-label="Execution flow" className="border-b border-white/10 p-5 sm:p-6 lg:border-b-0 lg:border-r">
+        <section aria-label={t("landing.demo.execution-flow")} className="border-b border-white/10 p-5 sm:p-6 lg:border-b-0 lg:border-r">
           <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">Flow</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">{t("landing.demo.flow")}</h3>
             <span
               className={`min-w-[88px] rounded-full border px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wider transition-colors duration-300 ${
                 done
@@ -311,7 +315,7 @@ export default function AgentDemo() {
               const state = i < step ? 'done' : i === step ? 'active' : 'pending';
               return (
                 <li
-                  key={s.title}
+                  key={s.titleKey}
                   className={`relative flex gap-3 rounded-xl p-2 transition-colors duration-300 ${
                     state === 'active' ? 'bg-blue-400/10 ring-1 ring-blue-400/20' : ''
                   }`}
@@ -335,7 +339,7 @@ export default function AgentDemo() {
                           state === 'done' ? 'text-slate-200' : state === 'active' ? 'text-slate-100' : 'text-slate-400'
                         }`}
                       >
-                        {s.title}
+                        {t(s.titleKey)}
                       </span>
                       <span className={`shrink-0 text-[11px] transition-colors duration-300 ${state === 'pending' ? 'text-slate-600' : 'text-slate-500'}`}>
                         {state === 'pending' ? '—' : '10:24'}
@@ -356,9 +360,9 @@ export default function AgentDemo() {
         </section>
 
         {/* Detail */}
-        <section aria-label="Execution detail" className="bg-slate-950/50 p-5 sm:p-6">
+        <section aria-label={t("landing.demo.execution-detail")} className="bg-slate-950/50 p-5 sm:p-6">
           <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">Detail</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">{t("landing.demo.detail")}</h3>
             <span
               className={`min-w-[88px] rounded-full border px-2 py-1 text-center text-[10px] font-semibold transition-colors duration-300 ${
                 done
@@ -378,7 +382,7 @@ export default function AgentDemo() {
               </span>
             </div>
             <pre className="h-36 overflow-hidden whitespace-pre">{current.code}</pre>
-            <div className="mt-4 border-t border-white/10 pt-3 text-emerald-300">→ Agent runtime connected</div>
+            <div className="mt-4 border-t border-white/10 pt-3 text-emerald-300">{t("landing.demo.agent-runtime-connected")}</div>
           </div>
 
           <button
@@ -389,22 +393,22 @@ export default function AgentDemo() {
             }}
             className="mt-5 w-full rounded-xl border border-blue-400/30 bg-blue-500/10 px-4 py-3 text-sm font-semibold text-blue-200 transition hover:bg-blue-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-blue-400"
           >
-            Replay execution
+            {t("landing.demo.replay-execution")}
           </button>
         </section>
       </div>
 
-      <footer aria-label="Execution trace summary" className="relative border-t border-white/10 bg-black/20 px-5 py-4 sm:px-6">
+      <footer aria-label={t("landing.demo.execution-trace-summary")} className="relative border-t border-white/10 bg-black/20 px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-y-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500 sm:text-xs">
-          {TRACE.map((t, i) => {
-            const lit = step >= t.threshold;
+          {TRACE.map((trace, i) => {
+            const lit = step >= trace.threshold;
             return (
-              <div key={t.label} className="flex items-center gap-2">
+              <div key={trace.labelKey} className="flex items-center gap-2">
                 <div className={`flex items-center gap-2 transition-colors duration-300 ${lit ? 'text-slate-300' : 'text-slate-600'}`}>
-                  <span className={lit ? t.color : 'text-slate-600'} aria-hidden="true">
-                    {lit ? t.lit : '○'}
+                  <span className={lit ? trace.color : 'text-slate-600'} aria-hidden="true">
+                    {lit ? trace.lit : '○'}
                   </span>
-                  <span>{t.label}</span>
+                  <span>{t(trace.labelKey)}</span>
                   <small className="inline-block w-14 font-mono normal-case text-slate-500">{lit ? '10:24' : 'pending'}</small>
                 </div>
                 {i < TRACE.length - 1 && <span className="hidden text-blue-400 sm:inline">→</span>}

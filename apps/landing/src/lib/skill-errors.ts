@@ -1,9 +1,11 @@
 /**
- * Orden #57 · Bloque 3 (ANEXO-57-G) · G-4.2 — textos de error en un solo módulo.
+ * Orden #62 · ANEXO-62-A (D2) — textos de error en lenguaje claro (G-4.2).
  *
- * El código y el texto del backend NUNCA se muestran crudos: se traducen a lenguaje claro.
- * El backend responde RFC 7807 con `code`, `field` y `meta` (ver `b3-g3-contrato.txt`).
+ * Orden #57 · Bloque 3 (ANEXO-57-G) · G-4.2: el código y el texto del backend NUNCA
+ * se muestran crudos. Desde la #62 el texto vive en el catálogo (`errors.<código>`),
+ * en los dos idiomas; aquí solo se mapea el código a su clave.
  */
+import type { TFunction } from '@/i18n/types';
 
 export interface SkillErrorInfo {
   code?: string;
@@ -12,35 +14,33 @@ export interface SkillErrorInfo {
   agents?: number;
 }
 
-const CODE_TEXTS: Record<string, string> = {
-  skill_name_reserved: 'Ese nombre es de una skill de RELT. Elige otro.',
-  skill_name_taken: 'Ya tienes una skill con ese nombre.',
-  skill_base_not_found: 'La skill base no existe.',
-  tool_not_in_base: 'Elegiste una capacidad que la skill base no tiene.',
-  instructions_too_long: 'Las instrucciones superan el límite de caracteres.',
-  skill_limit_reached: 'Llegaste al máximo de 20 skills activas.',
-  skill_read_only: 'Las skills de RELT no se pueden editar.',
-  skill_not_found: 'Esa skill no existe o no está disponible.',
+const CODE_KEYS: Record<string, string> = {
+  skill_name_reserved: 'errors.skill_name_reserved',
+  skill_name_taken: 'errors.skill_name_taken',
+  skill_base_not_found: 'errors.skill_base_not_found',
+  tool_not_in_base: 'errors.tool_not_in_base',
+  instructions_too_long: 'errors.instructions_too_long',
+  skill_limit_reached: 'errors.skill_limit_reached',
+  skill_read_only: 'errors.skill_read_only',
+  skill_not_found: 'errors.skill_not_found',
 };
 
-const FALLBACK = 'No se pudo guardar. Intenta de nuevo.';
-const ROLE_403 = 'Tu rol no permite crear ni editar skills. Pídeselo a un administrador.';
-
-/** Texto en lenguaje claro para un error de skills (G-4.2). */
-export function skillErrorMessage(info: SkillErrorInfo): string {
+/** Texto en lenguaje claro para un error de skills (G-4.2), en el idioma activo. */
+export function skillErrorMessage(t: TFunction, info: SkillErrorInfo): string {
   if (info.code === 'field_too_long') {
-    return `El campo ${info.field ?? 'indicado'} es demasiado largo.`;
+    return t('errors.field_too_long', { field: info.field ?? t('errors.field_default') });
   }
   if (info.code === 'skill_in_use') {
-    return `La usan ${info.agents ?? 0} agentes.`;
+    return t('errors.skill_in_use', { count: info.agents ?? 0 });
   }
-  if (info.code && CODE_TEXTS[info.code]) {
-    return CODE_TEXTS[info.code];
-  }
+
+  const key = info.code ? CODE_KEYS[info.code] : undefined;
+  if (key) return t(key);
+
   if (info.status === 403) {
-    return ROLE_403;
+    return t('errors.role_403');
   }
-  return FALLBACK;
+  return t('errors.fallback');
 }
 
 interface ErrorLike {
@@ -51,7 +51,7 @@ interface ErrorLike {
 }
 
 /** Extrae los campos del error de `api.ts` y devuelve su texto claro. */
-export function skillErrorFrom(err: unknown): string {
+export function skillErrorFrom(t: TFunction, err: unknown): string {
   const e = (err ?? {}) as ErrorLike;
-  return skillErrorMessage({ code: e.code, status: e.status, field: e.field, agents: e.meta?.agents });
+  return skillErrorMessage(t, { code: e.code, status: e.status, field: e.field, agents: e.meta?.agents });
 }

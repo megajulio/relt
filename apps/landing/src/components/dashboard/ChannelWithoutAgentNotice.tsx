@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { assignChannel } from '@/lib/agents';
 import { D5_NO_AGENT_TEXT } from '@/lib/orden49';
+import { useT } from '@/i18n/provider';
 
 /**
  * Orden #49 · D5 — aviso visible de canal conectado sin agente, con la acción
@@ -31,6 +32,7 @@ export function ChannelWithoutAgentNotice({
   onAssigned,
   testId = 'd5-notice',
 }: ChannelWithoutAgentNoticeProps) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +76,7 @@ export function ChannelWithoutAgentNotice({
             href="/dashboard/agents"
             className="text-xs font-semibold text-yellow-100 hover:text-yellow-50"
           >
-            Choose an Agent →
+            {t("dashboard.channels.choose-an-agent")}
           </Link>
         )}
       </div>

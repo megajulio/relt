@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getAgent, patchAgentConfig, type AgentDetail } from '@/lib/agents';
+import { useT } from '@/i18n/provider';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -40,6 +41,7 @@ export default function AgentMemoryForm({
   agent: AgentDetail;
   onSaved: (a: AgentDetail) => void;
 }) {
+  const t = useT();
   const [stEnabled, setStEnabled] = useState(agent.config.memory?.shortTerm?.enabled ?? false);
   const [stLimit, setStLimit] = useState<string>(
     agent.config.memory?.shortTerm?.limit != null
@@ -110,7 +112,7 @@ export default function AgentMemoryForm({
       )}
       {saved && !dirty && !error && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-sm text-green-300">
-          Memory configuration guardada correctamente.
+          {t("agents.memory.memory-configuration-guardada-correctamente")}
         </div>
       )}
 
@@ -122,17 +124,17 @@ export default function AgentMemoryForm({
           onChange={setStEnabled}
         />
         <div className="pl-7">
-          <div className="text-sm text-gray-400 mb-1.5">Message limit</div>
+          <div className="text-sm text-gray-400 mb-1.5">{t("agents.memory.message-limit")}</div>
           <input
             type="number"
             className={inputCls + ' disabled:opacity-40 disabled:cursor-not-allowed max-w-[160px]'}
             value={stLimit}
             onChange={(e) => setStLimit(e.target.value)}
             disabled={!stEnabled}
-            placeholder="ej: 10"
+            placeholder={t("agents.memory.ej-10")}
           />
           <div className="text-xs text-gray-600 mt-1">
-            Entero positivo (validado por Zod server-side). Vacío = sin límite explícito.
+            {t("agents.memory.entero-positivo-validado-por-zod-server-side-vacio-sin-l")}
           </div>
         </div>
         <Toggle
@@ -149,7 +151,7 @@ export default function AgentMemoryForm({
           disabled={!dirty || saving}
           className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          Reset
+          {t("agents.memory.reset")}
         </button>
         <button
           onClick={handleSave}
@@ -161,8 +163,7 @@ export default function AgentMemoryForm({
       </div>
 
       <p className="text-xs text-gray-600">
-        El PATCH envía el objeto memory completo (shortTerm + summary) para ser seguro ante la
-        semántica de merge del backend. La validación final es Zod server-side.
+        {t("agents.memory.el-patch-envia-el-objeto-memory-completo-shortterm-summa")}
       </p>
     </div>
   );

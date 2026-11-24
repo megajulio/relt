@@ -4,6 +4,7 @@ import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { api } from '@/lib/api';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useT } from '@/i18n/provider';
 
 type ActivityEvent = {
   id: string;
@@ -42,32 +43,34 @@ const EVENT_TYPES = [
 
 const STATUS_OPTIONS = ['success', 'failure', 'error'] as const;
 
+// Orden #62 · ANEXO-62-A (D3): los datos de módulo guardan la clave del catálogo.
 const DATE_RANGES = [
-  { value: 'all', label: 'All time' },
-  { value: '1h', label: 'Last hour' },
-  { value: '24h', label: 'Last 24h' },
-  { value: '7d', label: 'Last 7 days' },
-  { value: '30d', label: 'Last 30 days' },
+  { value: 'all', labelKey: 'activity.range.all' },
+  { value: '1h', labelKey: 'activity.range.1h' },
+  { value: '24h', labelKey: 'activity.range.24h' },
+  { value: '7d', labelKey: 'activity.range.7d' },
+  { value: '30d', labelKey: 'activity.range.30d' },
 ] as const;
 
 type IconName = 'key' | 'mail' | 'signal' | 'inbox' | 'send' | 'user' | 'doc';
 
-const EVENT_CONFIG: Record<string, { icon: IconName; label: string; color: string }> = {
-  'api_key.created': { icon: 'key', label: 'API key created', color: 'text-green-400' },
-  'api_key.revoked': { icon: 'key', label: 'API key revoked', color: 'text-red-400' },
-  'api_key.expired': { icon: 'key', label: 'API key expired', color: 'text-yellow-400' },
-  'message.queued': { icon: 'mail', label: 'Message queued', color: 'text-blue-400' },
-  'message.sent': { icon: 'mail', label: 'Message sent', color: 'text-blue-400' },
-  'message.delivered': { icon: 'mail', label: 'Message delivered', color: 'text-green-400' },
-  'message.failed': { icon: 'mail', label: 'Message failed', color: 'text-red-400' },
-  'provider.request': { icon: 'signal', label: 'Provider request', color: 'text-blue-400' },
-  'provider.error': { icon: 'signal', label: 'Provider error', color: 'text-red-400' },
-  'webhook.received': { icon: 'inbox', label: 'Webhook received', color: 'text-yellow-400' },
-  'webhook.delivered': { icon: 'send', label: 'Webhook delivered', color: 'text-green-400' },
-  'webhook.failed': { icon: 'send', label: 'Webhook failed', color: 'text-red-400' },
-  'webhook.retry': { icon: 'send', label: 'Webhook retry', color: 'text-yellow-400' },
-  'auth.login': { icon: 'user', label: 'Login', color: 'text-green-400' },
-  'auth.login_failed': { icon: 'user', label: 'Login failed', color: 'text-red-400' },
+/** `labelKey` es `activity.event.<event_type>`; el texto se resuelve con `t()`. */
+const EVENT_CONFIG: Record<string, { icon: IconName; color: string }> = {
+  'api_key.created': { icon: 'key', color: 'text-green-400' },
+  'api_key.revoked': { icon: 'key', color: 'text-red-400' },
+  'api_key.expired': { icon: 'key', color: 'text-yellow-400' },
+  'message.queued': { icon: 'mail', color: 'text-blue-400' },
+  'message.sent': { icon: 'mail', color: 'text-blue-400' },
+  'message.delivered': { icon: 'mail', color: 'text-green-400' },
+  'message.failed': { icon: 'mail', color: 'text-red-400' },
+  'provider.request': { icon: 'signal', color: 'text-blue-400' },
+  'provider.error': { icon: 'signal', color: 'text-red-400' },
+  'webhook.received': { icon: 'inbox', color: 'text-yellow-400' },
+  'webhook.delivered': { icon: 'send', color: 'text-green-400' },
+  'webhook.failed': { icon: 'send', color: 'text-red-400' },
+  'webhook.retry': { icon: 'send', color: 'text-yellow-400' },
+  'auth.login': { icon: 'user', color: 'text-green-400' },
+  'auth.login_failed': { icon: 'user', color: 'text-red-400' },
 };
 
 function EventIcon({ name, className }: { name: IconName; className?: string }) {
@@ -160,6 +163,7 @@ function rangeToISO(range: string): { from: string | null; to: string | null } {
 }
 
 export default function ActivityPage() {
+  const t = useT();
   useDashboardAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -277,11 +281,11 @@ export default function ActivityPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">
-            Observability
+            {t("activity.observability")}
           </div>
-          <h1 className="mt-2 text-3xl font-bold text-white">Activity</h1>
+          <h1 className="mt-2 text-3xl font-bold text-white">{t("activity.activity")}</h1>
           <p className="mt-1 text-gray-400">
-            What happened across your account, messages and webhooks.
+            {t("activity.what-happened-across-your-account-messages-and-webhooks")}
           </p>
         </div>
 
@@ -290,7 +294,7 @@ export default function ActivityPage() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-60" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
           </span>
-          Live · {events.length} event{events.length === 1 ? '' : 's'}
+          {t("activity.live")} {events.length} {t("activity.event")}{events.length === 1 ? '' : 's'}
         </div>
       </div>
 
@@ -299,11 +303,11 @@ export default function ActivityPage() {
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <label className="mb-1 block text-[11px] uppercase tracking-wider text-gray-500">
-              Search
+              {t("activity.search")}
             </label>
             <input
               type="text"
-              placeholder="event type, metadata..."
+              placeholder={t("activity.event-type-metadata")}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-blue-600 focus:outline-none"
@@ -312,14 +316,14 @@ export default function ActivityPage() {
 
           <div>
             <label className="mb-1 block text-[11px] uppercase tracking-wider text-gray-500">
-              Event type
+              {t("activity.event-type")}
             </label>
             <select
               value={eventType}
               onChange={(e) => updateParam('event_type', e.target.value)}
               className="w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white focus:border-blue-600 focus:outline-none"
             >
-              <option value="">All events</option>
+              <option value="">{t("activity.all-events")}</option>
               {EVENT_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -330,14 +334,14 @@ export default function ActivityPage() {
 
           <div>
             <label className="mb-1 block text-[11px] uppercase tracking-wider text-gray-500">
-              Status
+              {t("activity.status")}
             </label>
             <select
               value={status}
               onChange={(e) => updateParam('status', e.target.value)}
               className="w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white focus:border-blue-600 focus:outline-none"
             >
-              <option value="">All statuses</option>
+              <option value="">{t("activity.all-statuses")}</option>
               {STATUS_OPTIONS.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -348,7 +352,7 @@ export default function ActivityPage() {
 
           <div>
             <label className="mb-1 block text-[11px] uppercase tracking-wider text-gray-500">
-              Date range
+              {t("activity.date-range")}
             </label>
             <select
               value={range}
@@ -357,7 +361,7 @@ export default function ActivityPage() {
             >
               {DATE_RANGES.map((r) => (
                 <option key={r.value} value={r.value}>
-                  {r.label}
+                  {t(r.labelKey)}
                 </option>
               ))}
             </select>
@@ -370,7 +374,7 @@ export default function ActivityPage() {
               onClick={clearAll}
               className="text-xs text-gray-400 transition-colors hover:text-white"
             >
-              Clear filters
+              {t("activity.clear-filters")}
             </button>
           </div>
         )}
@@ -395,13 +399,13 @@ export default function ActivityPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-red-900/50 bg-red-950/30 text-red-400">
               <EventIcon name="signal" className="h-5 w-5" />
             </div>
-            <div className="mt-4 font-medium text-white">We couldn't load your activity</div>
+            <div className="mt-4 font-medium text-white">{t("activity.we-couldn-t-load-your-activity")}</div>
             <p className="mt-1 text-sm text-gray-400">{error}</p>
             <button
               onClick={() => setReloadKey((k) => k + 1)}
               className="mt-5 rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-blue-600 hover:text-blue-300"
             >
-              Try again
+              {t("activity.try-again")}
             </button>
           </div>
         ) : events.length === 0 ? (
@@ -421,9 +425,9 @@ export default function ActivityPage() {
         ) : (
           <ul className="divide-y divide-gray-800">
             {events.map((event) => {
-              const config = EVENT_CONFIG[event.event_type] || {
+              const known = EVENT_CONFIG[event.event_type];
+              const config = known || {
                 icon: 'doc' as IconName,
-                label: event.event_type,
                 color: 'text-gray-400',
               };
               const isExpanded = expandedId === event.id;
@@ -439,7 +443,9 @@ export default function ActivityPage() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-white">{config.label}</span>
+                        <span className="font-medium text-white">
+                          {known ? t('activity.event.' + event.event_type) : event.event_type}
+                        </span>
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs ${
                             event.status === 'success'
@@ -462,9 +468,9 @@ export default function ActivityPage() {
                             <button
                               onClick={() => copyToClipboard(`req-${event.id}`, event.request_id!)}
                               className="inline-flex items-center gap-2 rounded-md border border-gray-800 bg-gray-950 px-2 py-1 text-gray-400 transition hover:border-blue-600/50 hover:text-blue-300"
-                              title="Click to copy request ID"
+                              title={t("activity.click-to-copy-request-id")}
                             >
-                              <span className="text-gray-600">req:</span>
+                              <span className="text-gray-600">{t("activity.req")}</span>
                               <span className="text-gray-300">{event.request_id.slice(0, 8)}…</span>
                               <span className="text-green-400">
                                 {copied === `req-${event.id}` ? 'copied!' : 'copy'}
@@ -475,9 +481,9 @@ export default function ActivityPage() {
                             <button
                               onClick={() => copyToClipboard(`trace-${event.id}`, event.trace_id!)}
                               className="inline-flex items-center gap-2 rounded-md border border-gray-800 bg-gray-950 px-2 py-1 text-gray-400 transition hover:border-blue-600/50 hover:text-blue-300"
-                              title="Click to copy trace ID"
+                              title={t("activity.click-to-copy-trace-id")}
                             >
-                              <span className="text-gray-600">trace:</span>
+                              <span className="text-gray-600">{t("activity.trace")}</span>
                               <span className="text-gray-300">{event.trace_id.slice(0, 8)}…</span>
                               <span className="text-green-400">
                                 {copied === `trace-${event.id}` ? 'copied!' : 'copy'}
@@ -499,7 +505,7 @@ export default function ActivityPage() {
                           <div className="mt-2 overflow-x-auto">
                             <div className="flex items-center justify-between rounded-t-lg border border-gray-800 bg-gray-900 px-3 py-2">
                               <span className="font-mono text-[11px] uppercase tracking-wider text-gray-500">
-                                metadata
+                                {t("activity.metadata")}
                               </span>
                               <button
                                 onClick={() =>
@@ -538,7 +544,7 @@ export default function ActivityPage() {
                 {loadingMore ? 'Loading...' : 'Load more'}
               </button>
             ) : (
-              <span className="text-sm text-gray-500">End of history</span>
+              <span className="text-sm text-gray-500">{t("activity.end-of-history")}</span>
             )}
           </div>
         )}

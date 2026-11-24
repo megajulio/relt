@@ -8,6 +8,7 @@ import {
   type ApiKey,
   type CreateApiKeyResponse,
 } from '@/lib/api-keys';
+import { useT } from '@/i18n/provider';
 
 type ViewState =
   | { kind: 'list' }
@@ -29,6 +30,7 @@ function formatDate(iso: string | null): string {
 }
 
 export default function ApiKeysPage() {
+  const t = useT();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -94,22 +96,22 @@ export default function ApiKeysPage() {
             <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-xl">
               🔑
             </div>
-            <h1 className="text-2xl font-bold text-white">API Key Created</h1>
+            <h1 className="text-2xl font-bold text-white">{t("apiKeys.api-key-created")}</h1>
           </div>
 
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
             <p className="text-sm text-amber-200 font-medium">
-              ⚠️ Copy this key now. For security reasons you won't be able to see it again.
+              {t("apiKeys.copy-this-key-now-for-security-reasons-you-won-t-be-able")}
             </p>
           </div>
 
           <div className="space-y-2 mb-6">
-            <div className="text-xs uppercase tracking-wide text-gray-500">Name</div>
+            <div className="text-xs uppercase tracking-wide text-gray-500">{t("apiKeys.name")}</div>
             <div className="text-white">{response.name}</div>
           </div>
 
           <div className="space-y-2 mb-6">
-            <div className="text-xs uppercase tracking-wide text-gray-500">API Key</div>
+            <div className="text-xs uppercase tracking-wide text-gray-500">{t("apiKeys.api-key")}</div>
             <div className="flex items-center gap-2 bg-gray-950 border border-gray-800 rounded-lg p-3">
               <code className="flex-1 text-sm text-green-400 font-mono break-all">
                 {response.key}
@@ -118,7 +120,7 @@ export default function ApiKeysPage() {
                 onClick={() => copyToClipboard(response.key)}
                 className="shrink-0 bg-gray-800 hover:bg-gray-700 text-white text-sm px-3 py-1.5 rounded-md transition-colors"
               >
-                📋 Copy
+                {t("apiKeys.copy")}
               </button>
             </div>
           </div>
@@ -127,7 +129,7 @@ export default function ApiKeysPage() {
             onClick={() => setView({ kind: 'list' })}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
           >
-            I've copied my key
+            {t("apiKeys.i-ve-copied-my-key")}
           </button>
         </div>
       </div>
@@ -140,10 +142,10 @@ export default function ApiKeysPage() {
     return (
       <div className="max-w-lg">
         <div className="bg-gray-900 border border-red-500/40 rounded-xl p-8">
-          <h2 className="text-xl font-bold text-white mb-2">Revoke API Key?</h2>
+          <h2 className="text-xl font-bold text-white mb-2">{t("apiKeys.revoke-api-key")}</h2>
           <p className="text-gray-400 mb-6">
-            Applications using <span className="text-white font-mono">{target.keyPrefix}...</span>{' '}
-            will immediately stop working.
+            {t("apiKeys.applications-using")} <span className="text-white font-mono">{target.keyPrefix}...</span>{' '}
+            {t("apiKeys.will-immediately-stop-working")}
           </p>
 
           <div className="flex gap-3">
@@ -151,13 +153,13 @@ export default function ApiKeysPage() {
               onClick={() => setView({ kind: 'list' })}
               className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
             >
-              Cancel
+              {t("apiKeys.cancel")}
             </button>
             <button
               onClick={handleRevokeConfirm}
               className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
             >
-              Revoke Key
+              {t("apiKeys.revoke-key")}
             </button>
           </div>
         </div>
@@ -170,16 +172,16 @@ export default function ApiKeysPage() {
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">API Keys</h1>
+          <h1 className="text-3xl font-bold text-white">{t("apiKeys.api-keys")}</h1>
           <p className="text-gray-400 mt-1">
-            API keys let your application authenticate with Relt.
+            {t("apiKeys.api-keys-let-your-application-authenticate-with-relt")}
           </p>
         </div>
         <button
           onClick={() => setView({ kind: 'creating' })}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors"
         >
-          + Create API Key
+          {t("apiKeys.create-api-key")}
         </button>
       </div>
 
@@ -192,11 +194,11 @@ export default function ApiKeysPage() {
       {/* Create form */}
       {view.kind === 'creating' && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Create API Key</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">{t("apiKeys.create-api-key-2")}</h2>
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
-                Name
+                {t("apiKeys.name")}
               </label>
               <input
                 id="name"
@@ -205,11 +207,11 @@ export default function ApiKeysPage() {
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Production"
+                placeholder={t("apiKeys.production")}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <p className="text-xs text-gray-500 mt-1">
-                This name helps you identify the key later.
+                {t("apiKeys.this-name-helps-you-identify-the-key-later")}
               </p>
             </div>
 
@@ -222,13 +224,13 @@ export default function ApiKeysPage() {
                 }}
                 className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
               >
-                Cancel
+                {t("apiKeys.cancel")}
               </button>
               <button
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
               >
-                Create API Key
+                {t("apiKeys.create-api-key-2")}
               </button>
             </div>
           </form>
@@ -237,22 +239,22 @@ export default function ApiKeysPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="text-gray-400 text-center py-12">Loading API keys...</div>
+        <div className="text-gray-400 text-center py-12">{t("apiKeys.loading-api-keys")}</div>
       )}
 
       {/* Empty state */}
       {!loading && keys.length === 0 && (
         <div className="bg-gray-900 border border-gray-800 border-dashed rounded-xl p-12 text-center">
           <div className="text-4xl mb-3">🔑</div>
-          <h3 className="text-lg font-semibold text-white mb-1">No API keys yet</h3>
+          <h3 className="text-lg font-semibold text-white mb-1">{t("apiKeys.no-api-keys-yet")}</h3>
           <p className="text-gray-400 text-sm mb-5">
-            Create your first API key to start sending messages.
+            {t("apiKeys.create-your-first-api-key-to-start-sending-messages")}
           </p>
           <button
             onClick={() => setView({ kind: 'creating' })}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
           >
-            + Create your first API key
+            {t("apiKeys.create-your-first-api-key")}
           </button>
         </div>
       )}
@@ -271,7 +273,7 @@ export default function ApiKeysPage() {
                   <code className="font-mono text-green-400">{key.keyPrefix}...</code>
                   <span className="text-gray-600">·</span>
                   <span className="text-gray-400">
-                    Created {formatDate(key.createdAt)}
+                    {t("apiKeys.created")} {formatDate(key.createdAt)}
                   </span>
                   <span className="text-gray-600">·</span>
                   <span className="text-gray-400">{formatDate(key.lastUsedAt)}</span>
@@ -282,7 +284,7 @@ export default function ApiKeysPage() {
                 onClick={() => setView({ kind: 'confirm-revoke', target: key })}
                 className="ml-4 text-sm text-gray-400 hover:text-red-400 transition-colors"
               >
-                Revoke
+                {t("apiKeys.revoke")}
               </button>
             </div>
           ))}
