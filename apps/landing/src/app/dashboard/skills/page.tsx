@@ -11,6 +11,7 @@ import {
 import { capabilityPhrases } from '@/lib/skill-labels';
 import { skillErrorFrom } from '@/lib/skill-errors';
 import { countChars, MAX_SKILL_INSTRUCTIONS } from '@/lib/count-chars';
+import { useT } from '@/i18n/provider';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -27,6 +28,7 @@ const labelCls = 'block text-sm font-medium text-gray-400 mb-1';
  *   las lee de la API (G-3).
  */
 export default function SkillsPage() {
+  const t = useT();
   useDashboardAuth();
 
   const [skills, setSkills] = useState<SkillWithTools[]>([]);
@@ -122,7 +124,7 @@ export default function SkillsPage() {
           instructions,
           allowed_tools: tools,
         });
-        setNotice('Skill actualizada.');
+        setNotice(t('skills.notice.updated'));
       } else {
         await createOrgSkill({
           name: name.trim(),
@@ -132,12 +134,12 @@ export default function SkillsPage() {
           instructions,
           allowed_tools: tools,
         });
-        setNotice('Skill creada.');
+        setNotice(t('skills.notice.created'));
       }
       await refresh();
       resetForm();
     } catch (err) {
-      setFormError(skillErrorFrom(err));
+      setFormError(skillErrorFrom(t, err));
     } finally {
       setSaving(false);
     }
@@ -148,10 +150,10 @@ export default function SkillsPage() {
     setNotice(null);
     try {
       await patchOrgSkill(skill.name, { status: 'archived' });
-      setNotice('Skill archivada.');
+      setNotice(t('skills.notice.archived'));
       await refresh();
     } catch (err) {
-      setFormError(skillErrorFrom(err));
+      setFormError(skillErrorFrom(t, err));
     }
   }
 
@@ -160,9 +162,9 @@ export default function SkillsPage() {
   return (
     <div className="max-w-5xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white">Skills</h1>
+        <h1 className="text-3xl font-bold text-white">{t("skills.skills")}</h1>
         <p className="text-gray-400 mt-1">
-          Skills de RELT (solo lectura) y skills de tu organización.
+          {t("skills.skills-de-relt-solo-lectura-y-skills-de-tu-organizacion")}
         </p>
       </div>
 
@@ -171,16 +173,16 @@ export default function SkillsPage() {
           {loadError}
         </div>
       )}
-      {loading && <div className="text-gray-400">Cargando skills...</div>}
+      {loading && <div className="text-gray-400">{t("skills.cargando-skills")}</div>}
 
       {!loading && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-800">
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Skill</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Origen</th>
-                <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">{t("skills.skill")}</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">{t("skills.origen")}</th>
+                <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">{t("skills.acciones")}</th>
               </tr>
             </thead>
             <tbody>
@@ -190,19 +192,19 @@ export default function SkillsPage() {
                     <div className="text-white font-medium">{skill.display_name ?? skill.name}</div>
                     <div className="text-xs text-gray-500 font-mono">{skill.name}</div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {capabilityPhrases(skill.tools).join(' · ')}
+                      {capabilityPhrases(t, skill.tools).join(' · ')}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm">
                     {skill.kind === 'repo' ? (
-                      <span className="text-gray-400">De RELT</span>
+                      <span className="text-gray-400">{t("skills.de-relt")}</span>
                     ) : (
-                      <span className="text-blue-300">De tu organización</span>
+                      <span className="text-blue-300">{t("skills.de-tu-organizacion")}</span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     {skill.kind === 'repo' ? (
-                      <span className="text-xs text-gray-500">Solo lectura</span>
+                      <span className="text-xs text-gray-500">{t("skills.solo-lectura")}</span>
                     ) : (
                       <div className="flex items-center justify-end gap-3">
                         <button
@@ -210,14 +212,14 @@ export default function SkillsPage() {
                           onClick={() => startEdit(skill)}
                           className="text-sm text-blue-400 hover:text-blue-300"
                         >
-                          Editar
+                          {t("skills.editar")}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleArchive(skill)}
                           className="text-sm text-red-400 hover:text-red-300"
                         >
-                          Archivar
+                          {t("skills.archivar")}
                         </button>
                       </div>
                     )}
@@ -248,7 +250,7 @@ export default function SkillsPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label htmlFor="skill-name" className={labelCls}>
-              Nombre
+              {t("skills.nombre")}
             </label>
             <input
               id="skill-name"
@@ -257,12 +259,12 @@ export default function SkillsPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={saving || editing !== null}
-              placeholder="mi-skill"
+              placeholder={t("skills.mi-skill")}
             />
           </div>
           <div>
             <label htmlFor="skill-base" className={labelCls}>
-              Skill base
+              {t("skills.skill-base")}
             </label>
             <select
               id="skill-base"
@@ -280,7 +282,7 @@ export default function SkillsPage() {
           </div>
           <div>
             <label htmlFor="skill-display-name" className={labelCls}>
-              Nombre visible
+              {t("skills.nombre-visible")}
             </label>
             <input
               id="skill-display-name"
@@ -293,7 +295,7 @@ export default function SkillsPage() {
           </div>
           <div>
             <label htmlFor="skill-description" className={labelCls}>
-              Descripción
+              {t("skills.descripcion")}
             </label>
             <input
               id="skill-description"
@@ -308,7 +310,7 @@ export default function SkillsPage() {
 
         <div>
           <label htmlFor="skill-instructions" className={labelCls}>
-            Instrucciones <span className="text-gray-500">{chars}/{MAX_SKILL_INSTRUCTIONS}</span>
+            {t("skills.instrucciones")} <span className="text-gray-500">{chars}/{MAX_SKILL_INSTRUCTIONS}</span>
           </label>
           <textarea
             id="skill-instructions"
@@ -321,10 +323,10 @@ export default function SkillsPage() {
         </div>
 
         <div>
-          <div className={labelCls}>Capacidades</div>
+          <div className={labelCls}>{t("skills.capacidades")}</div>
           <div className="space-y-2">
             {baseTools.length === 0 && (
-              <div className="text-xs text-gray-500">La skill base no declara capacidades.</div>
+              <div className="text-xs text-gray-500">{t("skills.la-skill-base-no-declara-capacidades")}</div>
             )}
             {baseTools.map((tool) => (
               <label key={tool} className="flex items-center gap-2 text-sm text-gray-200">
@@ -336,7 +338,7 @@ export default function SkillsPage() {
                   disabled={saving}
                 />
                 <span className="font-mono text-xs text-gray-500">{tool}</span>
-                <span>{capabilityPhrases([tool])[0]}</span>
+                <span>{capabilityPhrases(t, [tool])[0]}</span>
               </label>
             ))}
           </div>
@@ -349,7 +351,7 @@ export default function SkillsPage() {
               onClick={resetForm}
               className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white"
             >
-              Cancelar
+              {t("skills.cancelar")}
             </button>
           )}
           <button

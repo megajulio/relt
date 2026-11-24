@@ -1,60 +1,70 @@
 'use client';
 
 import { useState } from 'react';
+import { useT } from '@/i18n/provider';
 
 type DeveloperItem = {
-  title: string;
+  /** Identificador estable (clave de `developerExamples`); no se muestra. */
+  id: string;
+  /** Claves del catálogo: el texto se resuelve con `t()`. */
+  titleKey: string;
   state: 'Available' | 'Preview' | 'Roadmap';
-  text: string;
+  textKey: string;
 };
 
 const developerItems: DeveloperItem[] = [
   {
-    title: 'API',
+    id: 'API',
+    titleKey: 'landing.developers.api.title',
     state: 'Available',
-    text: 'Send and receive WhatsApp messages through one API.',
+    textKey: 'landing.developers.api.text',
   },
   {
-    title: 'Webhooks',
+    id: 'Webhooks',
+    titleKey: 'landing.developers.webhooks.title',
     state: 'Available',
-    text: 'Receive reliable event delivery from your conversations.',
+    textKey: 'landing.developers.webhooks.text',
   },
   {
-    title: 'SDK',
+    id: 'SDK',
+    titleKey: 'landing.developers.sdk.title',
     state: 'Preview',
-    text: 'Build integrations directly into your application.',
+    textKey: 'landing.developers.sdk.text',
   },
   {
-    title: 'n8n',
+    id: 'n8n',
+    titleKey: 'landing.developers.n8n.title',
     state: 'Roadmap',
-    text: 'Connect RELT workflows to your automation stack.',
+    textKey: 'landing.developers.n8n.text',
   },
   {
-    title: 'MCP',
+    id: 'MCP',
+    titleKey: 'landing.developers.mcp.title',
     state: 'Roadmap',
-    text: 'Extend your development workflow with RELT tools.',
+    textKey: 'landing.developers.mcp.text',
   },
   {
-    title: 'Embeds',
+    id: 'Embeds',
+    titleKey: 'landing.developers.embeds.title',
     state: 'Roadmap',
-    text: 'Bring RELT capabilities directly into your product.',
+    textKey: 'landing.developers.embeds.text',
   },
 ];
 
 const developerExamples: Record<
   string,
   {
-    label: string;
+    labelKey: string;
     language: string;
-    description: string;
+    descriptionKey: string;
     highlights: string[];
     code: string;
   }
 > = {
   API: {
-    label: 'Send a WhatsApp message',
+    labelKey: 'landing.developers.api.label',
     language: 'HTTP · JSON',
-    description: 'Send messages directly through the RELT API.',
+    descriptionKey: 'landing.developers.api.description',
     highlights: ['POST /v1/messages', 'JSON request / response', 'Bearer token auth'],
     code: `POST https://api.relt.dev/v1/messages
 
@@ -68,9 +78,9 @@ Content-Type: application/json
   },
 
   Webhooks: {
-    label: 'Receive an event',
+    labelKey: 'landing.developers.webhooks.label',
     language: 'Webhooks',
-    description: 'Receive conversation and messaging events in your application.',
+    descriptionKey: 'landing.developers.webhooks.description',
     highlights: ['X-Webhook-Signature header', 'message.received events', 'conversationId + messageId refs'],
     code: `POST /webhooks/relt
 
@@ -84,9 +94,9 @@ X-Webhook-Signature: <signature>
   },
 
   SDK: {
-    label: 'SDK integration',
+    labelKey: 'landing.developers.sdk.label',
     language: 'TypeScript · Node.js',
-    description: 'Use the RELT SDK to integrate messaging into your application.',
+    descriptionKey: 'landing.developers.sdk.description',
     highlights: ['Typed TypeScript client', 'relt.messages.send()', 'Node.js runtime'],
     code: `import { Relt } from '@relt/sdk';
 
@@ -103,9 +113,9 @@ console.log(result.id);`,
   },
 
   n8n: {
-    label: 'Workflow automation',
+    labelKey: 'landing.developers.n8n.label',
     language: 'n8n',
-    description: 'Connect RELT events and actions to automation workflows.',
+    descriptionKey: 'landing.developers.n8n.description',
     highlights: ['Webhook-triggered workflows', 'RELT events as workflow inputs', 'Downstream business actions'],
     code: `RELT
   ↓
@@ -118,9 +128,9 @@ Your workflow
 Business action`,
   },
   MCP: {
-    label: 'Developer tools',
+    labelKey: 'landing.developers.mcp.label',
     language: 'MCP',
-    description: 'Expose RELT capabilities to supported development agents.',
+    descriptionKey: 'landing.developers.mcp.description',
     highlights: ['RELT tools exposed over MCP', 'Agent-initiated calls', 'Dev-workflow integration'],
     code: `Agent
   ↓
@@ -134,9 +144,9 @@ Business systems`,
   },
 
   Embeds: {
-    label: 'Embedded experience',
+    labelKey: 'landing.developers.embeds.label',
     language: 'Platform',
-    description: 'Bring RELT capabilities directly into your own product.',
+    descriptionKey: 'landing.developers.embeds.description',
     highlights: ['In-product agent experiences', 'WhatsApp delivery underneath', 'Customer-facing flows'],
     code: `Your product
   ↓
@@ -155,6 +165,7 @@ function StateBadge({
 }: {
   state: DeveloperItem['state'];
 }) {
+  const t = useT();
   const styles = {
     Available:
       'border-emerald-400/20 bg-emerald-400/10 text-emerald-300',
@@ -168,20 +179,21 @@ function StateBadge({
     <span
       className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${styles[state]}`}
     >
-      {state}
+      {t('landing.developers.state.' + state.toLowerCase())}
     </span>
   );
 }
 
 export default function Developers() {
-  const [selectedTitle, setSelectedTitle] = useState('API');
+  const t = useT();
+  const [selectedId, setSelectedId] = useState('API');
 
   const selectedItem =
-    developerItems.find((item) => item.title === selectedTitle) ??
+    developerItems.find((item) => item.id === selectedId) ??
     developerItems[0];
 
   const selectedExample =
-    developerExamples[selectedTitle] ?? developerExamples.API;
+    developerExamples[selectedId] ?? developerExamples.API;
 
   return (
     <section
@@ -193,7 +205,7 @@ export default function Developers() {
         {/* Header */}
         <div className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">
-            Developers
+            {t("landing.developers.developers")}
           </p>
 
           <h2
@@ -202,26 +214,25 @@ export default function Developers() {
           >
             
 
-            <span className="text-blue-500">Build </span>with <span className="text-blue-500">RELT. </span>Extend it as you Grow. {' '}
+            <span className="text-blue-500">{t("landing.developers.build")} </span>{t("landing.developers.with")} <span className="text-blue-500">{t("landing.developers.relt")} </span>{t("landing.developers.extend-it-as-you-grow")} {' '}
           </h2>
 
           <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-400">
-            Use the API, receive reliable events, and extend RELT through the
-            developer platform as it grows.
+            {t("landing.developers.use-the-api-receive-reliable-events-and-extend-relt-thro")}
           </p>
         </div>
 
         {/* Capability selector */}
         <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {developerItems.map((item) => {
-            const active = selectedTitle === item.title;
+            const active = selectedId === item.id;
             const isRoadmap = item.state === 'Roadmap';
 
             return (
               <button
-                key={item.title}
+                key={item.id}
                 type="button"
-                onClick={() => setSelectedTitle(item.title)}
+                onClick={() => setSelectedId(item.id)}
                 disabled={isRoadmap}
                 aria-pressed={active}
                 className={[
@@ -238,7 +249,7 @@ export default function Developers() {
               >
                 <div className="flex items-center justify-between gap-4">
                   <h3 className="text-lg font-semibold text-white">
-                    {item.title}
+                    {t(item.titleKey)}
                   </h3>
 
                   <div className="flex items-center gap-2.5">
@@ -257,7 +268,7 @@ export default function Developers() {
                 </div>
 
                 <p className="mt-3 text-sm leading-6 text-slate-400">
-                  {item.text}
+                  {t(item.textKey)}
                 </p>
 
                 {!isRoadmap && (
@@ -275,7 +286,7 @@ export default function Developers() {
 
                 {isRoadmap && (
                   <div className="mt-5 text-[11px] uppercase tracking-[0.12em] text-slate-600">
-                    Coming in the developer platform
+                    {t("landing.developers.coming-in-the-developer-platform")}
                   </div>
                 )}
               </button>
@@ -288,11 +299,11 @@ export default function Developers() {
           <div className="flex flex-col justify-between gap-3 border-b border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:px-6">
             <div>
               <p className="text-[10px] uppercase tracking-[0.16em] text-slate-600">
-                Selected capability
+                {t("landing.developers.selected-capability")}
               </p>
 
               <h3 className="mt-1 text-lg font-semibold text-white">
-                {selectedItem.title}
+                {t(selectedItem.titleKey)}
               </h3>
             </div>
 
@@ -310,11 +321,11 @@ export default function Developers() {
             {/* Description */}
             <div className="border-b border-white/10 p-6 lg:border-b-0 lg:border-r sm:p-7">
               <p className="text-[10px] uppercase tracking-[0.16em] text-blue-400">
-                {selectedExample.label}
+                {t(selectedExample.labelKey)}
               </p>
 
               <p className="mt-4 text-lg font-medium leading-7 text-slate-200">
-                {selectedExample.description}
+                {t(selectedExample.descriptionKey)}
               </p>
 
               <div className="mt-6 space-y-3 text-sm text-slate-500">
@@ -338,7 +349,7 @@ export default function Developers() {
                     <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                     <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                   </div>
-                  <span className="text-xs text-slate-600">Example</span>
+                  <span className="text-xs text-slate-600">{t("landing.developers.example")}</span>
                 </div>
 
                 <span className="font-mono text-[10px] text-slate-600">
@@ -369,7 +380,7 @@ export default function Developers() {
               hover:text-blue-200
             "
           >
-            Explore the API
+            {t("landing.developers.explore-the-api")}
             <span aria-hidden="true">→</span>
           </a>
         </div>

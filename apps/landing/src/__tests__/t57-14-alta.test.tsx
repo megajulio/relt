@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-
+import { cleanup, screen, waitFor } from '@testing-library/react';
 /**
  * T57-14 (Orden #57 · Bloque 3 · ANEXO-57-G) — alta del agente.
  * Criterios (Bloque 3): el selector de skill está precargado con `general` e incluye las
@@ -35,6 +34,9 @@ vi.mock('@/lib/skills', () => ({
 }));
 
 import CreateAgentPage from '@/app/dashboard/agents/new/page';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'es');
 
 describe('T57-14 · alta: selector de skill (D5) e Instrucciones del negocio (D4)', () => {
   afterEach(() => cleanup());
@@ -43,14 +45,14 @@ describe('T57-14 · alta: selector de skill (D5) e Instrucciones del negocio (D4
     render(<CreateAgentPage />);
 
     await waitFor(() => {
-      const select = screen.queryByRole('combobox', { name: 'Default Skill' }) as HTMLSelectElement | null;
+      const select = screen.queryByRole('combobox', { name: 'Skill por defecto' }) as HTMLSelectElement | null;
       expect(select).not.toBeNull();
       const values = Array.from((select as HTMLSelectElement).options).map((o) => o.value);
       expect(values).toContain('general');
       expect(values).toContain('mi-tienda');
     });
 
-    const select = screen.getByRole('combobox', { name: 'Default Skill' }) as HTMLSelectElement;
+    const select = screen.getByRole('combobox', { name: 'Skill por defecto' }) as HTMLSelectElement;
     expect(select.value).toBe('general');
 
     const generalOption = Array.from(select.options).find((o) => o.value === 'general');

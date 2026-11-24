@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import LandingV2 from '../components/landing/LandingV2';
+import { translate } from '@/i18n';
+import { getActiveLocale } from '@/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'RELT — AI agents for WhatsApp',
-  description:
-    'Build AI agents that actually do the work on WhatsApp. Connect, execute, observe and improve.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getActiveLocale();
+  return {
+    title: translate(locale, 'landing.meta.title'),
+    description: translate(locale, 'landing.meta.description'),
+  };
+}
 
 export default function HomePage() {
   return <LandingV2 />;

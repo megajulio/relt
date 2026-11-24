@@ -10,8 +10,7 @@
  * canal sin Agent llama a `assignChannel(agentId, channelId, true)` y refresca.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 const mocks = vi.hoisted(() => ({
   assignChannel: vi.fn(),
   getAgent: vi.fn(),
@@ -90,6 +89,9 @@ import { ChannelWithoutAgentNotice } from '@/components/dashboard/ChannelWithout
 import AgentChannelsForm from '@/components/agent-channels-form';
 import AgentDetailPage from '@/app/dashboard/agents/[id]/page';
 import SandboxPage from '@/app/dashboard/sandbox/page';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 /** G3 · literal visible exacto (el dashboard del cliente está en inglés). */
 const D5_TEXT_G3 =

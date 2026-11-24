@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useT } from '@/i18n/provider';
 
 type ExecutionStep = {
   id: string;
+  /** Clave de color en `kindColor`; no se muestra. */
   kind: string;
-  label: string;
+  /** Claves del catálogo (se resuelven con `t()` en el render). */
+  labelKey: string;
   value: string;
   meta: string;
-  detail: string;
+  detailKey: string;
   facts: { k: string; v: string }[];
 };
 
@@ -16,11 +19,10 @@ const executionSteps: ExecutionStep[] = [
   {
     id: 'message',
     kind: 'Message',
-    label: 'Message',
+    labelKey: 'landing.observe.message.label',
     value: 'Necesito 30 camisetas blancas.',
     meta: '10:24',
-    detail:
-      'Inbound customer message received and normalized by the messaging pipeline.',
+    detailKey: 'landing.observe.message.detail',
     facts: [
       { k: 'Channel', v: 'whatsapp' },
       { k: 'Message ID', v: 'msg_8f21' },
@@ -30,11 +32,10 @@ const executionSteps: ExecutionStep[] = [
   {
     id: 'intent',
     kind: 'Intent',
-    label: 'Intent',
+    labelKey: 'landing.observe.intent.label',
     value: 'place_order',
     meta: '10:24',
-    detail:
-      'The Agent identified the customer goal and prepared the execution path.',
+    detailKey: 'landing.observe.intent.detail',
     facts: [
       { k: 'Confidence', v: '0.97' },
       { k: 'Execution path', v: 'prepared' },
@@ -43,11 +44,10 @@ const executionSteps: ExecutionStep[] = [
   {
     id: 'skill',
     kind: 'Skill',
-    label: 'Skill',
+    labelKey: 'landing.observe.skill.label',
     value: 'sales-assistant@1.1.1',
     meta: '10:24',
-    detail:
-      'The versioned Skill defines the commercial behavior used for this execution.',
+    detailKey: 'landing.observe.skill.detail',
     facts: [
       { k: 'Version', v: '1.1.1' },
       { k: 'Policy check', v: 'passed' },
@@ -56,11 +56,10 @@ const executionSteps: ExecutionStep[] = [
   {
     id: 'search',
     kind: 'Tool',
-    label: 'Tool',
+    labelKey: 'landing.observe.search.label',
     value: 'products.search',
     meta: '13ms',
-    detail:
-      'The Agent searched the product catalog before creating the quote.',
+    detailKey: 'landing.observe.search.detail',
     facts: [
       { k: 'Duration', v: '13ms' },
       { k: 'Operation', v: 'Product lookup' },
@@ -70,11 +69,10 @@ const executionSteps: ExecutionStep[] = [
   {
     id: 'quote',
     kind: 'Tool',
-    label: 'Tool',
+    labelKey: 'landing.observe.quote.label',
     value: 'quotes.create',
     meta: '18ms',
-    detail:
-      'The Agent created the quote using the selected product and requested quantity.',
+    detailKey: 'landing.observe.quote.detail',
     facts: [
       { k: 'Duration', v: '18ms' },
       { k: 'Input', v: 'quantity: 30' },
@@ -84,11 +82,10 @@ const executionSteps: ExecutionStep[] = [
   {
     id: 'result',
     kind: 'Result',
-    label: 'Result',
+    labelKey: 'landing.observe.result.label',
     value: 'COT-2026-000052',
     meta: 'created',
-    detail:
-      'A real execution result produced a persisted quotation identifier.',
+    detailKey: 'landing.observe.result.detail',
     facts: [
       { k: 'Status', v: 'Created' },
       { k: 'Execution', v: 'Completed' },
@@ -97,11 +94,10 @@ const executionSteps: ExecutionStep[] = [
   {
     id: 'response',
     kind: 'Response',
-    label: 'Response',
+    labelKey: 'landing.observe.response.label',
     value: 'sent',
     meta: 'complete',
-    detail:
-      'The Agent generated the customer-facing response after tool execution.',
+    detailKey: 'landing.observe.response.detail',
     facts: [
       { k: 'Channel', v: 'whatsapp' },
       { k: 'Delivery', v: 'delivered' },
@@ -121,6 +117,7 @@ function ExecutionTrace({
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
+  const t = useT();
   const selectedStep =
     executionSteps.find((step) => step.id === selectedId) ??
     executionSteps[0];
@@ -135,12 +132,12 @@ function ExecutionTrace({
           </span>
 
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
-            Example execution
+            {t("landing.observe.example-execution")}
           </span>
         </div>
 
         <span className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.04] px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
-          Complete
+          {t("landing.observe.complete")}
         </span>
       </div>
 
@@ -201,7 +198,7 @@ function ExecutionTrace({
                             active ? 'text-white' : 'text-slate-300 group-hover:text-white',
                           ].join(' ')}
                         >
-                          {step.label}
+                          {t(step.labelKey)}
                         </span>
 
                         <span className="font-mono text-[10px] text-slate-600">
@@ -233,7 +230,7 @@ function ExecutionTrace({
                   kindColor[selectedStep.kind] ?? 'text-slate-600'
                 }`}
               >
-                {selectedStep.kind}
+                {t(selectedStep.labelKey)}
               </p>
 
               <h3 className="mt-2 break-words font-mono text-lg font-semibold text-white">
@@ -257,11 +254,11 @@ function ExecutionTrace({
             </div>
           </div>
 
-          <p className="mt-5 text-sm leading-6 text-slate-400">{selectedStep.detail}</p>
+          <p className="mt-5 text-sm leading-6 text-slate-400">{t(selectedStep.detailKey)}</p>
 
           <div className="mt-6 flex items-center gap-2 text-xs text-slate-500">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-            Traced by RELT Agent Execution
+            {t("landing.observe.traced-by-relt-agent-execution")}
           </div>
         </div>
       </div>
@@ -271,7 +268,7 @@ function ExecutionTrace({
           {executionSteps.map((step, index) => (
             <span key={step.id} className="flex items-center gap-3">
               <span className={selectedId === step.id ? 'text-blue-300' : 'text-slate-600'}>
-                {step.label}
+                {t(step.labelKey)}
               </span>
 
               {index < executionSteps.length - 1 && <span className="text-slate-700">→</span>}
@@ -325,6 +322,7 @@ function MetricCard({
 }
 
 export default function Observe() {
+  const t = useT();
   const [selectedId, setSelectedId] = useState<string>('message');
 
   return (
@@ -337,7 +335,7 @@ export default function Observe() {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">
-              Observe
+              {t("landing.observe.observe")}
             </p>
 
             <h2
@@ -348,11 +346,11 @@ export default function Observe() {
 
 
 
-               See what your <span className="text-blue-500">Agents </span>are doing in <span className="text-blue-500">Production. </span>  {' '}
+               {t("landing.observe.see-what-your")} <span className="text-blue-500">{t("landing.observe.agents")} </span>{t("landing.observe.are-doing-in")} <span className="text-blue-500">{t("landing.observe.production")} </span>  {' '}
             </h2>
 
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-400">
-              Trace every Agent run from intent to action, result and response.
+              {t("landing.observe.trace-every-agent-run-from-intent-to-action-result-and-r")}
             </p>
           </div>
 

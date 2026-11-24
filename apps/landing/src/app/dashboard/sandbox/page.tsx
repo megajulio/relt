@@ -8,8 +8,10 @@ import { useSandboxConnection } from '@/lib/use-sandbox-connection';
 import { useSandboxStatus } from '@/lib/use-sandbox-status';
 import { useUnassignedChannels } from '@/lib/use-unassigned-channels';
 import { D2_CONFLICT_TEXT, isD2Conflict } from '@/lib/orden49';
+import { useT } from '@/i18n/provider';
 
 export default function SandboxPage() {
+  const t = useT();
   const { data: authData } = useDashboardAuth();
 
   const orgId = authData.organizations[0]?.id;
@@ -44,18 +46,18 @@ export default function SandboxPage() {
               href="/dashboard"
               className="hover:text-gray-300 transition-colors"
             >
-              Dashboard
+              {t("sandbox.dashboard")}
             </Link>
             <span className="mx-2">/</span>
-            <span>Sandbox</span>
+            <span>{t("sandbox.sandbox")}</span>
           </div>
 
           <h1 className="text-3xl font-bold text-white">
-            WhatsApp Sandbox
+            {t("sandbox.whatsapp-sandbox")}
           </h1>
 
           <p className="text-gray-400 mt-1">
-            Connect your WhatsApp account to start testing your Agent.
+            {t("sandbox.connect-your-whatsapp-account-to-start-testing-your-agen")}
           </p>
         </div>
       </div>
@@ -73,7 +75,7 @@ export default function SandboxPage() {
           <div className="space-y-4">
             <div>
               <h2 className="text-lg font-semibold text-white">
-                Unable to load QR code
+                {t("sandbox.unable-to-load-qr-code")}
               </h2>
               <p className="text-sm text-red-400 mt-2">{error}</p>
             </div>
@@ -82,7 +84,7 @@ export default function SandboxPage() {
               onClick={refresh}
               className="text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
             >
-              Try again
+              {t("sandbox.try-again")}
             </button>
           </div>
         )}
@@ -94,11 +96,11 @@ export default function SandboxPage() {
             </div>
 
             <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-400/10 px-3 py-1 text-xs font-semibold text-red-300">
-              NUMBER ALREADY IN USE
+              {t("sandbox.number-already-in-use")}
             </div>
 
             <h2 className="mt-4 text-xl font-semibold text-white">
-              This number is already connected to another RELT account
+              {t("sandbox.this-number-is-already-connected-to-another-relt-account")}
             </h2>
 
             <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-gray-300">
@@ -112,7 +114,7 @@ export default function SandboxPage() {
               }}
               className="mt-6 inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-gray-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
             >
-              Check again
+              {t("sandbox.check-again")}
             </button>
           </div>
         )}
@@ -138,16 +140,15 @@ export default function SandboxPage() {
             </div>
 
             <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-blue-300">
-              SANDBOX NOT PROVISIONED
+              {t("sandbox.sandbox-not-provisioned")}
             </div>
 
             <h2 className="mt-4 text-xl font-semibold text-white">
-              Your sandbox is not provisioned yet
+              {t("sandbox.your-sandbox-is-not-provisioned-yet")}
             </h2>
 
             <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-gray-400">
-              Create your first Agent and RELT will automatically provision your
-              WhatsApp sandbox for testing.
+              {t("sandbox.create-your-first-agent-and-relt-will-automatically-prov")}
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -155,7 +156,7 @@ export default function SandboxPage() {
                 href="/dashboard/agents/new"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
               >
-                Create your first Agent
+                {t("sandbox.create-your-first-agent")}
                 <span aria-hidden="true">→</span>
               </Link>
 
@@ -163,7 +164,7 @@ export default function SandboxPage() {
                 onClick={refresh}
                 className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-gray-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
               >
-                Check again
+                {t("sandbox.check-again")}
               </button>
             </div>
           </div>
@@ -177,21 +178,21 @@ export default function SandboxPage() {
 
             <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              CONNECTED
+              {t("sandbox.connected")}
             </div>
 
             <h2 className="mt-4 text-xl font-semibold text-white">
-              WhatsApp sandbox connected
+              {t("sandbox.whatsapp-sandbox-connected")}
             </h2>
 
             <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-gray-400">
-              Your WhatsApp account is connected and ready to test your Agent.
+              {t("sandbox.your-whatsapp-account-is-connected-and-ready-to-test-you")}
             </p>
 
             {connection.instance_name && (
               <div className="mt-5 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-left">
                 <p className="text-xs uppercase tracking-[0.14em] text-gray-500">
-                  Sandbox instance
+                  {t("sandbox.sandbox-instance")}
                 </p>
                 <p className="mt-1 font-mono text-sm text-gray-300 break-all">
                   {connection.instance_name}
@@ -204,7 +205,7 @@ export default function SandboxPage() {
                 href="/dashboard/agents"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
               >
-                Create your first Agent
+                {t("sandbox.create-your-first-agent")}
                 <span aria-hidden="true">→</span>
               </Link>
 
@@ -212,7 +213,7 @@ export default function SandboxPage() {
                 onClick={refresh}
                 className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-gray-300 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
               >
-                Refresh status
+                {t("sandbox.refresh-status")}
               </button>
             </div>
           </div>
@@ -226,29 +227,28 @@ export default function SandboxPage() {
           <div className="text-center">
             <div className="inline-flex items-center gap-2 text-green-400 text-sm font-medium mb-4">
               <span>●</span>
-              Sandbox ready
+              {t("sandbox.sandbox-ready")}
             </div>
 
             <h2 className="text-xl font-semibold text-white">
-              Scan this QR code with WhatsApp
+              {t("sandbox.scan-this-qr-code-with-whatsapp")}
             </h2>
 
             <p className="text-sm text-gray-400 mt-2">
-              Open WhatsApp on your phone and scan this code to connect
-              your sandbox.
+              {t("sandbox.open-whatsapp-on-your-phone-and-scan-this-code-to-connec")}
             </p>
 
             <div className="mt-6 inline-flex rounded-2xl bg-white p-4">
               <img
                 src={data.qr_base64}
-                alt="WhatsApp sandbox QR code"
+                alt={t("sandbox.whatsapp-sandbox-qr-code")}
                 className="block w-[320px] h-[320px]"
               />
             </div>
 
-            {data.message && (
+            {data.messageKey && (
               <p className="text-xs text-gray-500 mt-4">
-                {data.message}
+                {t(data.messageKey)}
               </p>
             )}
 
@@ -262,7 +262,7 @@ export default function SandboxPage() {
               onClick={refresh}
               className="mt-5 text-sm text-blue-400 hover:text-blue-300 font-medium"
             >
-              Refresh QR
+              {t("sandbox.refresh-qr")}
             </button>
           </div>
         )}
@@ -277,15 +277,15 @@ export default function SandboxPage() {
             </div>
 
             <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-yellow-400/20 bg-yellow-400/10 px-3 py-1 text-xs font-semibold text-yellow-300">
-              WHATSAPP DISCONNECTED
+              {t("sandbox.whatsapp-disconnected")}
             </div>
 
             <h2 className="mt-4 text-xl font-semibold text-white">
-              WhatsApp is disconnected
+              {t("sandbox.whatsapp-is-disconnected")}
             </h2>
 
             <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-gray-400">
-              Your sandbox is still active. Reconnect WhatsApp to continue testing your Agent.
+              {t("sandbox.your-sandbox-is-still-active-reconnect-whatsapp-to-conti")}
             </p>
 
             <button
@@ -295,7 +295,7 @@ export default function SandboxPage() {
               }}
               className="mt-6 inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
             >
-              Reconnect WhatsApp
+              {t("sandbox.reconnect-whatsapp")}
             </button>
           </div>
         )}
@@ -309,18 +309,18 @@ export default function SandboxPage() {
               <div className="text-green-400 text-3xl mb-3">✓</div>
 
               <h2 className="text-xl font-semibold text-white">
-                WhatsApp connection is not waiting for a QR
+                {t("sandbox.whatsapp-connection-is-not-waiting-for-a-qr")}
               </h2>
 
               <p className="text-sm text-gray-400 mt-2">
-                The sandbox may already be connected.
+                {t("sandbox.the-sandbox-may-already-be-connected")}
               </p>
 
               <button
                 onClick={refresh}
                 className="mt-5 text-sm bg-gray-800 hover:bg-gray-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
               >
-                Check again
+                {t("sandbox.check-again")}
               </button>
             </div>
           )}

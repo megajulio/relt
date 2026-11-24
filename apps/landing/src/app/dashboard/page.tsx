@@ -4,8 +4,10 @@ import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import Link from 'next/link';
 import { SandboxStatusCard } from '@/components/dashboard/SandboxStatusCard';
 import { useSandboxConnection } from '@/lib/use-sandbox-connection';
+import { useT } from '@/i18n/provider';
 
 export default function DashboardOverviewPage() {
+  const t = useT();
   const { data } = useDashboardAuth();
 
   const orgId = data.organizations[0]?.id;
@@ -17,29 +19,39 @@ export default function DashboardOverviewPage() {
 
   const sandboxConnected = sandboxConnection?.state === 'connected';
 
+  // Orden #62 · ANEXO-62-A (D3): el texto sale del catálogo aunque la lista esté
+  // declarada dentro del componente.
   const checklist = [
-    { label: 'Create your account', done: true },
+    { label: t('dashboard.overview.create-your-account'), done: true },
     {
-      label: 'Activate your sandbox',
+      label: t('dashboard.overview.activate-your-sandbox'),
       done: sandboxConnected,
       cta: sandboxConnected
         ? undefined
-        : { href: '/dashboard/sandbox', label: 'View status' },
+        : { href: '/dashboard/sandbox', label: t('dashboard.overview.view-status') },
     },
-    { label: 'Create your first agent', done: false, cta: { href: '/dashboard/agents', label: 'Create agent' } },
-    { label: 'Send your first message', done: false, cta: { href: '/dashboard/quickstart', label: 'Quickstart' } },
+    {
+      label: t('dashboard.overview.create-your-first-agent'),
+      done: false,
+      cta: { href: '/dashboard/agents', label: t('dashboard.overview.create-agent') },
+    },
+    {
+      label: t('dashboard.overview.send-your-first-message'),
+      done: false,
+      cta: { href: '/dashboard/quickstart', label: t('dashboard.overview.quickstart') },
+    },
   ];
 
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-white">Welcome back, {user.name}</h1>
-        <p className="text-gray-400 mt-1">Here's what's happening in your workspace.</p>
+        <h1 className="text-3xl font-bold text-white">{t("dashboard.overview.welcome-back")} {user.name}</h1>
+        <p className="text-gray-400 mt-1">{t("dashboard.overview.here-s-what-s-happening-in-your-workspace")}</p>
       </div>
 
       {/* Workspace card */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <div className="text-xs uppercase tracking-wide text-gray-500 mb-3">Your workspace</div>
+        <div className="text-xs uppercase tracking-wide text-gray-500 mb-3">{t("dashboard.overview.your-workspace")}</div>
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xl font-semibold text-white">{activeOrg?.name || '—'}</div>
@@ -49,7 +61,7 @@ export default function DashboardOverviewPage() {
             href="/dashboard/api-keys"
             className="text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
           >
-            API Keys
+            {t("dashboard.overview.api-keys")}
           </Link>
         </div>
       </div>
@@ -62,7 +74,7 @@ export default function DashboardOverviewPage() {
 
       {/* Get started checklist */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Get started</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">{t("dashboard.overview.get-started")}</h2>
         <ul className="space-y-3">
           {checklist.map((item, i) => (
             <li

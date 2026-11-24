@@ -6,8 +6,7 @@
  * sandbox con `status='failed'` y `last_error_code='channel_number_conflict'`.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-
+import { screen } from '@testing-library/react';
 const statusState = vi.hoisted(() => ({
   current: null as { status: string; last_error_code: string; last_error: string } | null,
 }));
@@ -60,6 +59,9 @@ vi.mock('@/components/dashboard/DashboardAuthProvider', () => ({
 import { D2_CONFLICT_TEXT, D2_CONFLICT_TEXT_ORDER_LITERAL } from '@/lib/orden49';
 import { SandboxStatusCard } from '@/components/dashboard/SandboxStatusCard';
 import SandboxPage from '@/app/dashboard/sandbox/page';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 const conflict = {
   status: 'failed',

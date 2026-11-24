@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-
+import { cleanup, screen } from '@testing-library/react';
 /**
  * T57-16 (Orden #57 · Bloque 3 · ANEXO-57-G) — pestaña Memory (D6).
  * Criterios: los toggles corresponden a D6; y, como Q6 mostró que el resumen SÍ existe, su
@@ -13,6 +12,9 @@ vi.mock('@/lib/agents', () => ({
 }));
 
 import AgentMemoryForm from '@/components/agent-memory-form';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 const AGENT = {
   id: 'a1',

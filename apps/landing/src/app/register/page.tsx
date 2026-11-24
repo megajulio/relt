@@ -4,8 +4,10 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { register } from '@/lib/auth';
+import { useT } from '@/i18n/provider';
 
 export default function RegisterPage() {
+  const t = useT();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,11 +35,11 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-950 to-gray-900 px-4">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h1 className="text-4xl font-bold text-white text-center">Create your account</h1>
+          <h1 className="text-4xl font-bold text-white text-center">{t("register.create-your-account")}</h1>
           <p className="mt-2 text-gray-400 text-center">
-            Already have an account?{' '}
+            {t("register.already-have-an-account")}{' '}
             <Link href="/login" className="text-blue-500 hover:text-blue-400">
-              Sign in
+              {t("register.sign-in")}
             </Link>
           </p>
         </div>
@@ -52,7 +54,7 @@ export default function RegisterPage() {
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
-                Name
+                {t("register.name")}
               </label>
               <input
                 id="name"
@@ -61,13 +63,13 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Julio"
+                placeholder={t("register.julio")}
               />
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                Email
+                {t("register.email")}
               </label>
               <input
                 id="email"
@@ -76,13 +78,13 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="you@example.com"
+                placeholder={t("register.you-example-com")}
               />
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-                Password
+                {t("register.password")}
               </label>
               <input
                 id="password"
@@ -92,13 +94,13 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="At least 8 characters"
+                placeholder={t("register.at-least-8-characters")}
               />
             </div>
 
             <div>
               <label htmlFor="organizationName" className="block text-sm font-medium text-gray-300 mb-1">
-                Organization Name
+                {t("register.organization-name")}
               </label>
               <input
                 id="organizationName"
@@ -107,7 +109,7 @@ export default function RegisterPage() {
                 value={organizationName}
                 onChange={(e) => setOrganizationName(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="My Company"
+                placeholder={t("register.my-company")}
               />
             </div>
           </div>

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-
+import { screen, fireEvent } from '@testing-library/react';
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children?: React.ReactNode; href?: string }) => (
@@ -18,6 +17,9 @@ vi.mock('@/lib/skills', () => ({
 }));
 
 import CreateAgentPage from '@/app/dashboard/agents/new/page';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 /**
  * U1 · La página de creación vuelve a exponer los 3 controles de modelo

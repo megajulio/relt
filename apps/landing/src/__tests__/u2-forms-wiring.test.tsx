@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import type { AgentDetail } from '@/lib/agents';
 
 const mocks = vi.hoisted(() => ({
@@ -32,6 +32,9 @@ vi.mock('@/lib/agents', () => ({
 
 import CreateAgentPage from '@/app/dashboard/agents/new/page';
 import AgentConfigForm from '@/components/agent-config-form';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 /**
  * U2 · Wiring: las páginas usan los builders de payload.

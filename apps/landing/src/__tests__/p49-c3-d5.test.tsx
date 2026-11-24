@@ -12,8 +12,7 @@
  * + acción de asignar) no cambian.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 const mocks = vi.hoisted(() => ({
   assignChannel: vi.fn(),
   getAgent: vi.fn(),
@@ -84,6 +83,9 @@ import { D5_NO_AGENT_TEXT, D5_NO_AGENT_TEXT_ORDER_LITERAL } from '@/lib/orden49'
 import { ChannelWithoutAgentNotice } from '@/components/dashboard/ChannelWithoutAgentNotice';
 import AgentChannelsForm from '@/components/agent-channels-form';
 import SandboxPage from '@/app/dashboard/sandbox/page';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 const agent = {
   id: 'agent-1',

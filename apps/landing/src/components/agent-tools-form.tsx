@@ -8,6 +8,7 @@ import {
   type AgentDetail,
   type ToolCatalogItem,
 } from '@/lib/agents';
+import { useT } from '@/i18n/provider';
 
 export default function AgentToolsForm({
   agent,
@@ -16,6 +17,7 @@ export default function AgentToolsForm({
   agent: AgentDetail;
   onSaved: (a: AgentDetail) => void;
 }) {
+  const t = useT();
   const [catalog, setCatalog] = useState<ToolCatalogItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [checked, setChecked] = useState<string[]>(agent.config.toolBindings ?? []);
@@ -72,14 +74,14 @@ export default function AgentToolsForm({
       )}
       {saved && !dirty && !error && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-sm text-green-300">
-          Tool bindings guardados correctamente.
+          {t("agents.tools.tool-bindings-guardados-correctamente")}
         </div>
       )}
 
-      {loadingCatalog && <div className="text-sm text-gray-500">Cargando catálogo de tools...</div>}
+      {loadingCatalog && <div className="text-sm text-gray-500">{t("agents.tools.cargando-catalogo-de-tools")}</div>}
 
       {!loadingCatalog && catalog.length === 0 && (
-        <div className="text-sm text-gray-400">No hay tools registradas en la plataforma.</div>
+        <div className="text-sm text-gray-400">{t("agents.tools.no-hay-tools-registradas-en-la-plataforma")}</div>
       )}
 
       <div className="space-y-3">
@@ -122,7 +124,7 @@ export default function AgentToolsForm({
           disabled={!dirty || saving}
           className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          Reset
+          {t("agents.tools.reset")}
         </button>
         <button
           onClick={handleSave}
@@ -134,9 +136,7 @@ export default function AgentToolsForm({
       </div>
 
       <p className="text-xs text-gray-600">
-        F.8: lo marcado aquí define <span className="font-mono">toolBindings</span>. El Runtime
-        autoriza en ejecución exactamente este conjunto; desmarcar una tool la hace inejecutable
-        para este Agent sin tocar código.
+        {t("agents.tools.f-8-lo-marcado-aqui-define")} <span className="font-mono">{t("agents.tools.toolbindings")}</span>{t("agents.tools.el-runtime-autoriza-en-ejecucion-exactamente-este-conjun")}
       </p>
     </div>
   );

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import Link from 'next/link';
 import { listAgents, type Agent } from '@/lib/agents';
+import { useT } from '@/i18n/provider';
 
 const STATUS_STYLES: Record<Agent['status'], string> = {
   active: 'bg-green-500/20 text-green-400 border border-green-500/30',
@@ -12,6 +13,7 @@ const STATUS_STYLES: Record<Agent['status'], string> = {
 };
 
 export default function AgentsPage() {
+  const t = useT();
   useDashboardAuth();
 
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -30,35 +32,35 @@ export default function AgentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Agents</h1>
-          <p className="text-gray-400 mt-1">Manage your AI agents and their configurations.</p>
+          <h1 className="text-3xl font-bold text-white">{t("agents.agents")}</h1>
+          <p className="text-gray-400 mt-1">{t("agents.manage-your-ai-agents-and-their-configurations")}</p>
         </div>
         <Link
           href="/dashboard/agents/new"
           className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
         >
-          Create Agent
+          {t("agents.create-agent")}
         </Link>
       </div>
 
       {/* Content */}
       {loading && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
-          <div className="text-gray-400">Loading agents...</div>
+          <div className="text-gray-400">{t("agents.loading-agents")}</div>
         </div>
       )}
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6">
-          <div className="text-red-400 font-medium mb-1">Error</div>
+          <div className="text-red-400 font-medium mb-1">{t("agents.error")}</div>
           <div className="text-red-300 text-sm">{error}</div>
         </div>
       )}
 
       {!loading && !error && agents.length === 0 && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
-          <div className="text-gray-400 mb-2">No agents yet</div>
-          <div className="text-gray-500 text-sm">Create your first agent to get started.</div>
+          <div className="text-gray-400 mb-2">{t("agents.no-agents-yet")}</div>
+          <div className="text-gray-500 text-sm">{t("agents.create-your-first-agent-to-get-started")}</div>
         </div>
       )}
 
@@ -68,19 +70,19 @@ export default function AgentsPage() {
             <thead>
               <tr className="border-b border-gray-800">
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
+                  {t("agents.name")}
                 </th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t("agents.status")}
                 </th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Skill
+                  {t("agents.skill")}
                 </th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Model Strategy
+                  {t("agents.model-strategy")}
                 </th>
                 <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t("agents.actions")}
                 </th>
               </tr>
             </thead>
@@ -104,7 +106,7 @@ export default function AgentsPage() {
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-300">{agent.config.skillBinding?.skill || agent.defaultSkill}</div>
                     {agent.config.skillBinding?.version && (
-                      <div className="text-xs text-gray-500">v{agent.config.skillBinding.version}</div>
+                      <div className="text-xs text-gray-500">{t("agents.v")}{agent.config.skillBinding.version}</div>
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -115,7 +117,7 @@ export default function AgentsPage() {
                       href={`/dashboard/agents/${agent.id}`}
                       className="text-sm text-blue-400 hover:text-blue-300 font-medium"
                     >
-                      View →
+                      {t("agents.view")}
                     </Link>
                   </td>
                 </tr>

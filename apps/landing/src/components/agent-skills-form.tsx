@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getAgent, patchAgentConfig, type AgentDetail } from '@/lib/agents';
 import { listSkills, type SkillListItem } from '@/lib/skills';
+import { useT } from '@/i18n/provider';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -14,6 +15,7 @@ export default function AgentSkillsForm({
   agent: AgentDetail;
   onSaved: (a: AgentDetail) => void;
 }) {
+  const t = useT();
   const [catalog, setCatalog] = useState<SkillListItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [skill, setSkill] = useState(agent.config.skillBinding?.skill ?? agent.defaultSkill ?? '');
@@ -102,14 +104,14 @@ export default function AgentSkillsForm({
       )}
       {saved && !dirty && !error && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-sm text-green-300">
-          Skill binding guardado correctamente.
+          {t("agents.skills.skill-binding-guardado-correctamente")}
         </div>
       )}
 
       <div>
-        <div className="text-sm text-gray-400 mb-1.5">Skill</div>
+        <div className="text-sm text-gray-400 mb-1.5">{t("agents.skills.skill")}</div>
         <select className={inputCls} value={skill} onChange={(e) => handleSkillChange(e.target.value)}>
-          <option value="">— seleccionar —</option>
+          <option value="">{t("agents.skills.seleccionar")}</option>
           {catalog.map((s) => (
             <option key={s.name} value={s.name}>
               {s.name} {s.kind === 'repo' ? '(De RELT)' : '(De tu organización)'}
@@ -120,11 +122,11 @@ export default function AgentSkillsForm({
 
       {isOrg ? (
         <div className="text-xs text-gray-500">
-          Las skills de tu organización no se fijan a una versión.
+          {t("agents.skills.las-skills-de-tu-organizacion-no-se-fijan-a-una-version")}
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="text-sm text-gray-400 mb-1.5">Skill Version</div>
+          <div className="text-sm text-gray-400 mb-1.5">{t("agents.skills.skill-version")}</div>
           <div className="space-y-2">
             <label className="flex items-start gap-2 cursor-pointer">
               <input
@@ -136,9 +138,9 @@ export default function AgentSkillsForm({
                 className="mt-1 w-4 h-4 accent-blue-600"
               />
               <div className="flex-1">
-                <div className="text-sm text-gray-200">Automática</div>
+                <div className="text-sm text-gray-200">{t("agents.skills.automatica")}</div>
                 <div className="text-xs text-gray-500 mt-0.5">
-                  Usa la versión resuelta por el sistema (latest).
+                  {t("agents.skills.usa-la-version-resuelta-por-el-sistema-latest")}
                 </div>
               </div>
             </label>
@@ -152,16 +154,16 @@ export default function AgentSkillsForm({
                 className="mt-1 w-4 h-4 accent-blue-600"
               />
               <div className="flex-1">
-                <div className="text-sm text-gray-200 mb-1.5">Fijar versión</div>
+                <div className="text-sm text-gray-200 mb-1.5">{t("agents.skills.fijar-version")}</div>
                 <select
                   className={inputCls + ' disabled:opacity-40 disabled:cursor-not-allowed'}
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
                   disabled={mode !== 'pinned'}
                 >
-                  {selected && <option value={selected.latest_version}>v{selected.latest_version} (latest)</option>}
+                  {selected && <option value={selected.latest_version}>{t("agents.skills.v")}{selected.latest_version} {t("agents.skills.latest")}</option>}
                   {version && version !== selected?.latest_version && (
-                    <option value={version}>v{version}</option>
+                    <option value={version}>{t("agents.skills.v")}{version}</option>
                   )}
                 </select>
               </div>
@@ -170,14 +172,14 @@ export default function AgentSkillsForm({
         </div>
       )}
 
-      {loadingCatalog && <div className="text-sm text-gray-500">Cargando catálogo de skills...</div>}
+      {loadingCatalog && <div className="text-sm text-gray-500">{t("agents.skills.cargando-catalogo-de-skills")}</div>}
 
       {selected && (
         <div className="bg-gray-950 border border-gray-800 rounded-lg p-4 space-y-3">
           <div className="text-sm text-gray-300">{selected.description}</div>
           <div className="flex items-center gap-4 text-xs text-gray-500">
-            <span>Latest: v{selected.latest_version}</span>
-            <span>{selected.tools_count} tools</span>
+            <span>{t("agents.skills.latest-v")}{selected.latest_version}</span>
+            <span>{selected.tools_count} {t("agents.skills.tools")}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {selected.permissions.map((p) => (
@@ -198,7 +200,7 @@ export default function AgentSkillsForm({
           disabled={!dirty || saving}
           className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          Reset
+          {t("agents.skills.reset")}
         </button>
         <button
           onClick={handleSave}

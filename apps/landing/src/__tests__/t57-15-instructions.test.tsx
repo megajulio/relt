@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { countChars, MAX_BUSINESS_INSTRUCTIONS, normalizeText } from '@/lib/count-chars';
 
 /**
@@ -15,6 +15,9 @@ vi.mock('@/lib/agents', () => ({
 }));
 
 import AgentConfigForm from '@/components/agent-config-form';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'es');
 
 const AGENT = {
   id: 'a1',

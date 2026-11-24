@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import {
-  FIRST_REPLY_RULE,
+  FIRST_REPLY_RULE_KEY,
   FIRST_REPLY_STEP,
   firstReplyLabel,
   firstReplyRule,
@@ -14,6 +14,7 @@ import {
   type PlatformClientRow,
   type PlatformClientsOverview,
 } from '@/lib/platform';
+import { useT } from '@/i18n/provider';
 
 /**
  * Orden #47 · Panel interno del dueño (v1, SOLO LECTURA).
@@ -39,18 +40,20 @@ function fmt(value: string | null): string {
 }
 
 function StepBadge({ step, source }: { step: string; source?: FirstReplySource }) {
+  const t = useT();
   const cls = STEP_STYLES[step] || 'bg-gray-500/20 text-gray-300 border-gray-500/30';
   return (
     <span
       className={`inline-block whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium ${cls}`}
-      title={step === FIRST_REPLY_STEP ? firstReplyRule(source) : undefined}
+      title={step === FIRST_REPLY_STEP ? firstReplyRule(t, source) : undefined}
     >
-      {stepLabel(step, source)}
+      {stepLabel(t, step, source)}
     </span>
   );
 }
 
 function NumbersCell({ row }: { row: PlatformClientRow }) {
+  const t = useT();
   if (row.numbers.length === 0) return <span className="text-sm text-gray-500">—</span>;
   return (
     <div className="space-y-1">
@@ -64,12 +67,12 @@ function NumbersCell({ row }: { row: PlatformClientRow }) {
               className="ml-2 rounded border border-red-500/40 bg-red-500/10 px-1.5 py-0.5 text-xs text-red-300"
               title={`Mismo número también en: ${n.duplicateWith.join(', ')}`}
             >
-              DUPLICADO · {n.duplicateWith.join(', ')}
+              {t("platform.duplicado")} {n.duplicateWith.join(', ')}
             </span>
           )}
           {!n.hasActiveBinding && (
             <span className="ml-2 rounded border border-yellow-500/40 bg-yellow-500/10 px-1.5 py-0.5 text-xs text-yellow-300">
-              va al legacy
+              {t("platform.va-al-legacy")}
             </span>
           )}
         </div>
@@ -79,10 +82,11 @@ function NumbersCell({ row }: { row: PlatformClientRow }) {
 }
 
 function StepsGrid({ row }: { row: PlatformClientRow }) {
+  const t = useT();
   return (
     <div className="sm:col-span-2 lg:col-span-3">
       <div className="mb-2 text-xs uppercase tracking-wide text-gray-500">
-        Recorrido · estado actual (hoy)
+        {t("platform.recorrido-estado-actual-hoy")}
       </div>
       <div className="flex flex-wrap gap-2">
         {LAST_STEPS.map((step) => {
@@ -96,45 +100,59 @@ function StepsGrid({ row }: { row: PlatformClientRow }) {
                   ? 'border-green-500/40 bg-green-500/10 text-green-300'
                   : 'border-gray-700 bg-gray-800 text-gray-400'
               }`}
-              title={isFirstReply ? firstReplyRule(row.firstReplySource) : ok ? 'cumplido hoy' : 'no cumplido hoy'}
+              title={
+                isFirstReply
+                  ? firstReplyRule(t, row.firstReplySource)
+                  : ok
+                    ? t('platform.step.doneToday')
+                    : t('platform.step.notDoneToday')
+              }
             >
-              {ok ? '✓' : '✗'} {stepLabel(step, row.firstReplySource)}
+              {ok ? '✓' : '✗'} {stepLabel(t, step, row.firstReplySource)}
             </span>
           );
         })}
       </div>
       <p className="mt-2 text-xs text-gray-500">
-        «primera respuesta (inferida)»: {FIRST_REPLY_RULE}
+        {t("platform.primera-respuesta-inferida")} {t(FIRST_REPLY_RULE_KEY)}
       </p>
     </div>
   );
 }
 
 function Detail({ row }: { row: PlatformClientRow }) {
+  const t = useT();
+  // Orden #62 · ANEXO-62-A (D3): las etiquetas son claves del catálogo.
   const items: Array<[string, string]> = [
-    ['Organización', `${row.organizationName} (${row.organizationId})`],
-    ['Alta', fmt(row.organizationCreatedAt)],
-    ['Correo del dueño', row.ownerEmail || '—'],
-    ['Plan', row.plan],
-    ['Trial desde', fmt(row.trialStartedAt)],
-    ['Trial hasta', fmt(row.trialExpiresAt)],
-    ['Sandbox', `${row.sandbox.status || '—'} · intentos ${row.sandbox.attempts}`],
-    ['Último error del sandbox', row.sandbox.lastErrorCode || '—'],
-    ['Instancia', row.sandbox.instanceName || '—'],
-    ['Agentes', `${row.agents.total} (${row.agents.active} activos)`],
-    ['Primer entrante', fmt(row.activity.firstInboundAt)],
-    ['Último entrante', fmt(row.activity.lastInboundAt)],
-    ['Entrantes 7d', String(row.activity.inbound7d)],
-    ['Ejecuciones 7d', String(row.activity.executions7d)],
-    ['Ejecuciones con error 7d', String(row.activity.executionsFailed7d)],
-    ['Inbox FAILED', String(row.activity.inboxFailed)],
-    ['Inbox RECEIVED > 1 h', String(row.activity.inboxReceivedOver1h)],
-    ['Último paso (hoy)', stepLabel(row.lastStep, row.firstReplySource)],
+    [t('platform.detail.organization'), `${row.organizationName} (${row.organizationId})`],
+    [t('platform.detail.createdAt'), fmt(row.organizationCreatedAt)],
+    [t('platform.detail.ownerEmail'), row.ownerEmail || '—'],
+    [t('platform.detail.plan'), row.plan],
+    [t('platform.detail.trialFrom'), fmt(row.trialStartedAt)],
+    [t('platform.detail.trialTo'), fmt(row.trialExpiresAt)],
+    [
+      t('platform.detail.sandbox'),
+      `${row.sandbox.status || '—'} · ${t('platform.detail.attempts')} ${row.sandbox.attempts}`,
+    ],
+    [t('platform.detail.lastSandboxError'), row.sandbox.lastErrorCode || '—'],
+    [t('platform.detail.instance'), row.sandbox.instanceName || '—'],
+    [
+      t('platform.detail.agents'),
+      `${row.agents.total} (${row.agents.active} ${t('platform.detail.activePlural')})`,
+    ],
+    [t('platform.detail.firstInbound'), fmt(row.activity.firstInboundAt)],
+    [t('platform.detail.lastInbound'), fmt(row.activity.lastInboundAt)],
+    [t('platform.detail.inbound7d'), String(row.activity.inbound7d)],
+    [t('platform.detail.executions7d'), String(row.activity.executions7d)],
+    [t('platform.detail.executionsFailed7d'), String(row.activity.executionsFailed7d)],
+    [t('platform.detail.inboxFailed'), String(row.activity.inboxFailed)],
+    [t('platform.detail.inboxReceivedOver1h'), String(row.activity.inboxReceivedOver1h)],
+    [t('platform.detail.lastStepToday'), stepLabel(t, row.lastStep, row.firstReplySource)],
     [
       row.firstReplySource === 'link'
-        ? 'Primera respuesta (por vínculo) · histórico'
-        : 'Primera respuesta (inferida) · histórico',
-      row.firstReplyAt ? fmt(row.firstReplyAt) : 'nunca',
+        ? t('platform.detail.firstReplyLink')
+        : t('platform.detail.firstReplyInferred'),
+      row.firstReplyAt ? fmt(row.firstReplyAt) : t('platform.detail.never'),
     ],
   ];
   return (
@@ -151,6 +169,7 @@ function Detail({ row }: { row: PlatformClientRow }) {
 }
 
 export default function PlatformClientsPage() {
+  const t = useT();
   useDashboardAuth();
 
   const [data, setData] = useState<PlatformClientsOverview | null>(null);
@@ -169,7 +188,7 @@ export default function PlatformClientsPage() {
     return (
       <div className="max-w-7xl">
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-12 text-center text-gray-400">
-          Loading platform clients…
+          {t("platform.loading-platform-clients")}
         </div>
       </div>
     );
@@ -178,7 +197,7 @@ export default function PlatformClientsPage() {
   if (error) {
     return (
       <div className="max-w-7xl space-y-4">
-        <h1 className="text-3xl font-bold text-white">Platform · Clients</h1>
+        <h1 className="text-3xl font-bold text-white">{t("platform.platform-clients")}</h1>
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6">
           <div className="mb-1 font-medium text-red-400">
             {error.toLowerCase().includes('forbidden') || error.includes('403')
@@ -198,27 +217,26 @@ export default function PlatformClientsPage() {
     <div className="max-w-7xl space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Platform · Clients</h1>
+          <h1 className="text-3xl font-bold text-white">{t("platform.platform-clients")}</h1>
           <p className="mt-1 text-gray-400">
-            Internal view of every organization, its channels and how far it got in onboarding.
+            {t("platform.internal-view-of-every-organization-its-channels-and-how")}
           </p>
           <p className="mt-1 text-xs text-gray-500">
-            <span className="font-medium text-gray-400">Estado actual</span> = recorrido consecutivo de hoy ·{' '}
-            <span className="font-medium text-gray-400">Histórico</span> = primera respuesta (por
-            vínculo si existe; «(inferida)» si es anterior al vínculo) enviada alguna vez
+            <span className="font-medium text-gray-400">{t("platform.estado-actual")}</span> {t("platform.recorrido-consecutivo-de-hoy")}{' '}
+            <span className="font-medium text-gray-400">{t("platform.historico")}</span> {t("platform.primera-respuesta-por-vinculo-si-existe-inferida-si-es-a")}
           </p>
           <p className="mt-1 text-xs text-gray-500">
-            «primera respuesta (inferida)»: {FIRST_REPLY_RULE}
+            {t("platform.primera-respuesta-inferida")} {t(FIRST_REPLY_RULE_KEY)}
           </p>
         </div>
         <span className="rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300">
-          Read-only
+          {t("platform.read-only")}
         </span>
       </div>
 
       {data?.truncated && (
         <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200">
-          Mostrando las primeras {clients.length} de {data.totalOrganizations} organizaciones (tope duro de 500).
+          {t("platform.mostrando-las-primeras")} {clients.length} {t("platform.de")} {data.totalOrganizations} {t("platform.organizaciones-tope-duro-de-500")}
         </div>
       )}
 
@@ -226,33 +244,33 @@ export default function PlatformClientsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Organizations</div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">{t("platform.organizations")}</div>
               <div className="text-2xl font-semibold text-white">{totals.organizations}</div>
             </div>
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Duplicated numbers</div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">{t("platform.duplicated-numbers")}</div>
               <div className={`text-2xl font-semibold ${totals.duplicates > 0 ? 'text-red-400' : 'text-white'}`}>
                 {totals.duplicates}
               </div>
             </div>
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Channels going legacy</div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">{t("platform.channels-going-legacy")}</div>
               <div className={`text-2xl font-semibold ${totals.legacyChannels > 0 ? 'text-yellow-400' : 'text-white'}`}>
                 {totals.legacyChannels}
               </div>
             </div>
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Reached first reply (inferred)</div>
+              <div className="text-xs uppercase tracking-wide text-gray-500">{t("platform.reached-first-reply-inferred")}</div>
               <div className="text-2xl font-semibold text-white">{totals.funnel['primera respuesta'] ?? 0}</div>
             </div>
           </div>
 
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-            <div className="mb-3 text-xs uppercase tracking-wide text-gray-500">Onboarding funnel</div>
+            <div className="mb-3 text-xs uppercase tracking-wide text-gray-500">{t("platform.onboarding-funnel")}</div>
             <div className="flex flex-wrap gap-3">
               {LAST_STEPS.map((step) => (
                 <div key={step} className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-2">
-                  <div className="text-xs text-gray-400">{stepLabel(step)}</div>
+                  <div className="text-xs text-gray-400">{stepLabel(t, step)}</div>
                   <div className="text-lg font-semibold text-white">{totals.funnel[step] ?? 0}</div>
                 </div>
               ))}
@@ -264,7 +282,7 @@ export default function PlatformClientsPage() {
 
       {clients.length === 0 ? (
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-12 text-center text-gray-400">
-          No organizations yet.
+          {t("platform.no-organizations-yet")}
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
@@ -299,12 +317,12 @@ export default function PlatformClientsPage() {
                     <td className="px-4 py-4 text-sm text-gray-300">{row.ownerEmail || '—'}</td>
                     <td className="px-4 py-4 text-sm text-gray-300">
                       <div>{row.plan}</div>
-                      <div className="text-xs text-gray-500">trial: {fmt(row.trialExpiresAt)}</div>
+                      <div className="text-xs text-gray-500">{t("platform.trial")} {fmt(row.trialExpiresAt)}</div>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-300">
                       <div>{row.sandbox.status || '—'}</div>
                       <div className="text-xs text-gray-500">
-                        {row.sandbox.attempts} intento(s)
+                        {row.sandbox.attempts} {t("platform.intento-s")}
                         {row.sandbox.lastErrorCode ? ` · ${row.sandbox.lastErrorCode}` : ''}
                       </div>
                     </td>
@@ -312,15 +330,15 @@ export default function PlatformClientsPage() {
                       <NumbersCell row={row} />
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-300">
-                      {row.agents.total} <span className="text-xs text-gray-500">({row.agents.active} activos)</span>
+                      {row.agents.total} <span className="text-xs text-gray-500">({row.agents.active} {t("platform.activos")}</span>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-300">
-                      <div>in {row.activity.inbound7d}</div>
+                      <div>{t("platform.in")} {row.activity.inbound7d}</div>
                       <div className="text-xs text-gray-500">
-                        exec {row.activity.executions7d} · err {row.activity.executionsFailed7d}
+                        {t("platform.exec")} {row.activity.executions7d} {t("platform.err")} {row.activity.executionsFailed7d}
                       </div>
                       <div className="text-xs text-gray-500">
-                        inbox FAILED {row.activity.inboxFailed} · &gt;1h {row.activity.inboxReceivedOver1h}
+                        {t("platform.inbox-failed")} {row.activity.inboxFailed} {t("platform.gt-1h")} {row.activity.inboxReceivedOver1h}
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -329,9 +347,9 @@ export default function PlatformClientsPage() {
                         <div
                           data-testid="first-reply-datum"
                           className="mt-1 text-xs text-gray-500"
-                          title={firstReplyRule(row.firstReplySource)}
+                          title={firstReplyRule(t, row.firstReplySource)}
                         >
-                          {firstReplyLabel(row.firstReplySource)}: {fmt(row.firstReplyAt)}
+                          {firstReplyLabel(t, row.firstReplySource)}: {fmt(row.firstReplyAt)}
                         </div>
                       )}
                     </td>

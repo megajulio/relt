@@ -2,6 +2,7 @@
 
 import { useSandboxStatus } from '@/lib/use-sandbox-status';
 import { D2_CONFLICT_TEXT, isD2Conflict } from '@/lib/orden49';
+import { useT } from '@/i18n/provider';
 
 interface SandboxStatusCardProps {
   orgId: string | undefined;
@@ -12,6 +13,7 @@ export function SandboxStatusCard({
   orgId,
   connected = false,
 }: SandboxStatusCardProps) {
+  const t = useT();
   const { data, loading, error, retrying, retry } = useSandboxStatus(orgId);
 
   if (loading) {
@@ -34,7 +36,7 @@ export function SandboxStatusCard({
         <div className="flex items-start gap-3">
           <div className="text-red-400 text-xl">⚠</div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white">Error loading sandbox</h3>
+            <h3 className="text-lg font-semibold text-white">{t("dashboard.sandbox.error-loading-sandbox")}</h3>
             <p className="text-sm text-gray-400 mt-1">{error}</p>
           </div>
         </div>
@@ -49,9 +51,9 @@ export function SandboxStatusCard({
         <div className="flex items-start gap-3">
           <div className="text-blue-400 text-xl">◌</div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white">WhatsApp Sandbox</h3>
+            <h3 className="text-lg font-semibold text-white">{t("dashboard.sandbox.whatsapp-sandbox")}</h3>
             <p className="text-sm text-gray-400 mt-1">
-              Your sandbox is not yet provisioned. This will happen automatically when you create your first agent.
+              {t("dashboard.sandbox.your-sandbox-is-not-yet-provisioned-this-will-happen-aut")}
             </p>
           </div>
         </div>
@@ -66,16 +68,16 @@ export function SandboxStatusCard({
         <div className="flex items-start gap-3">
           <div className="text-yellow-400 text-xl animate-spin">◌</div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white">WhatsApp Sandbox</h3>
+            <h3 className="text-lg font-semibold text-white">{t("dashboard.sandbox.whatsapp-sandbox")}</h3>
             <p className="text-sm text-gray-400 mt-1">
-              Setting up your sandbox...
+              {t("dashboard.sandbox.setting-up-your-sandbox")}
             </p>
             <p className="text-xs text-gray-500 mt-2">
-              This usually takes a moment. The page will update automatically.
+              {t("dashboard.sandbox.this-usually-takes-a-moment-the-page-will-update-automat")}
             </p>
             <div className="mt-3 flex items-center gap-2">
               <div className="text-xs text-gray-500">
-                Attempt {data.attempts}
+                {t("dashboard.sandbox.attempt")} {data.attempts}
               </div>
               {data.instance_name && (
                 <div className="text-xs text-gray-600">
@@ -96,18 +98,18 @@ export function SandboxStatusCard({
         <div className="flex items-start gap-3">
           <div className="text-green-400 text-xl">●</div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white">WhatsApp Sandbox</h3>
+            <h3 className="text-lg font-semibold text-white">{t("dashboard.sandbox.whatsapp-sandbox")}</h3>
 
             <p className="text-sm text-gray-400 mt-1">
-              <span className="text-green-400 font-medium">Connected</span>
+              <span className="text-green-400 font-medium">{t("dashboard.sandbox.connected")}</span>
             </p>
 
             <p className="text-sm text-gray-400 mt-2">
-              WhatsApp is connected and ready to test your Agent.
+              {t("dashboard.sandbox.whatsapp-is-connected-and-ready-to-test-your-agent")}
             </p>
 
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-              <span>Evolution · Sandbox</span>
+              <span>{t("dashboard.sandbox.evolution-sandbox")}</span>
               {data.instance_name && (
                 <>
                   <span>·</span>
@@ -128,18 +130,18 @@ export function SandboxStatusCard({
         <div className="flex items-start gap-3">
           <div className="text-yellow-400 text-xl">●</div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white">WhatsApp Sandbox</h3>
+            <h3 className="text-lg font-semibold text-white">{t("dashboard.sandbox.whatsapp-sandbox")}</h3>
 
             <p className="text-sm text-gray-400 mt-1">
-              <span className="text-yellow-400 font-medium">Ready to connect</span>
+              <span className="text-yellow-400 font-medium">{t("dashboard.sandbox.ready-to-connect")}</span>
             </p>
 
             <p className="text-sm text-gray-400 mt-2">
-              Your sandbox is provisioned. Connect WhatsApp to start testing your Agent.
+              {t("dashboard.sandbox.your-sandbox-is-provisioned-connect-whatsapp-to-start-te")}
             </p>
 
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-              <span>Evolution · Sandbox</span>
+              <span>{t("dashboard.sandbox.evolution-sandbox")}</span>
               {data.instance_name && (
                 <>
                   <span>·</span>
@@ -160,10 +162,10 @@ export function SandboxStatusCard({
         <div className="flex items-start gap-3">
           <div className="text-red-400 text-xl">⚠</div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white">WhatsApp Sandbox</h3>
+            <h3 className="text-lg font-semibold text-white">{t("dashboard.sandbox.whatsapp-sandbox")}</h3>
             <p className="text-sm text-gray-300 mt-1">{D2_CONFLICT_TEXT}</p>
             <p className="text-xs text-gray-500 mt-2">
-              This sandbox cannot connect WhatsApp until the number is released from the other account.
+              {t("dashboard.sandbox.this-sandbox-cannot-connect-whatsapp-until-the-number-is")}
             </p>
           </div>
         </div>
@@ -178,9 +180,9 @@ export function SandboxStatusCard({
         <div className="flex items-start gap-3">
           <div className="text-red-400 text-xl">⚠</div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white">WhatsApp Sandbox</h3>
+            <h3 className="text-lg font-semibold text-white">{t("dashboard.sandbox.whatsapp-sandbox")}</h3>
             <p className="text-sm text-gray-400 mt-1">
-              Setup failed
+              {t("dashboard.sandbox.setup-failed")}
             </p>
             {data.last_error && (
               <p className="text-xs text-red-400 mt-2 font-mono">
@@ -196,7 +198,7 @@ export function SandboxStatusCard({
                 {retrying ? 'Retrying...' : 'Retry setup →'}
               </button>
               <div className="text-xs text-gray-500">
-                Attempt {data.attempts}
+                {t("dashboard.sandbox.attempt")} {data.attempts}
               </div>
             </div>
           </div>

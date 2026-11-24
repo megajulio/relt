@@ -5,8 +5,7 @@
  * «(inferida)». El histórico sin vínculo conserva «(inferida)», como en la #48 (K1).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
-
+import { screen, waitFor, within } from '@testing-library/react';
 const mocks = vi.hoisted(() => ({ getPlatformClients: vi.fn() }));
 
 vi.mock('@/lib/platform', async (importOriginal) => {
@@ -19,6 +18,9 @@ vi.mock('@/components/dashboard/DashboardAuthProvider', () => ({
 }));
 
 import PlatformClientsPage from '@/app/dashboard/platform/clients/page';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'es');
 
 function client(overrides: Record<string, unknown>) {
   return {
@@ -96,31 +98,31 @@ describe('C3 · primera respuesta por vínculo', () => {
     render(<PlatformClientsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Organizations')).toBeTruthy();
+      expect(screen.getByText('Organizaciones')).toBeTruthy();
     });
 
     const linkRow = screen.getByTestId('client-row-org-link');
     const linkDatum = within(linkRow).getByTestId('first-reply-datum');
-    expect(linkDatum.textContent?.startsWith('primera respuesta:')).toBe(true);
+    expect(linkDatum.textContent?.startsWith('Primera respuesta:')).toBe(true);
     expect(linkDatum.textContent).not.toContain('(inferida)');
 
     // En toda la fila (badge del último paso incluido) no aparece «(inferida)».
-    expect(within(linkRow).queryByText(/primera respuesta \(inferida\)/)).toBeNull();
+    expect(within(linkRow).queryByText(/primera respuesta \(inferida\)/i)).toBeNull();
 
     // El badge dice exactamente «primera respuesta».
-    expect(within(linkRow).getByText('primera respuesta')).toBeTruthy();
+    expect(within(linkRow).getByText('Primera respuesta')).toBeTruthy();
   });
 
   it('T49-C3-E2-2 · el histórico sin vínculo conserva «(inferida)»', async () => {
     render(<PlatformClientsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Organizations')).toBeTruthy();
+      expect(screen.getByText('Organizaciones')).toBeTruthy();
     });
 
     const inferredRow = screen.getByTestId('client-row-org-inferida');
     const inferredDatum = within(inferredRow).getByTestId('first-reply-datum');
-    expect(inferredDatum.textContent?.startsWith('primera respuesta (inferida):')).toBe(true);
+    expect(inferredDatum.textContent?.startsWith('Primera respuesta (inferida):')).toBe(true);
 
     // La regla de la inferencia sigue visible (K1 no se pierde).
     expect(
