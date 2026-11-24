@@ -9,9 +9,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useLocale, useT } from '@/i18n/provider';
-import { LOCALE_COOKIE, LOCALES, type Locale } from '@/i18n/types';
-
-const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
+import { writeLocaleCookie } from '@/lib/locale-cookie';
+import { LOCALES, type Locale } from '@/i18n/types';
 
 export function LanguageSwitcher({ className = '' }: { className?: string }) {
   const locale = useLocale();
@@ -20,7 +19,7 @@ export function LanguageSwitcher({ className = '' }: { className?: string }) {
 
   function choose(next: Locale) {
     if (next === locale) return;
-    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
+    writeLocaleCookie(next);
     router.refresh();
   }
 
