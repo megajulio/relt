@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import type { AgentDetail } from '@/lib/agents';
 import type { ModelCatalogItem } from '@/lib/models';
 
@@ -19,6 +19,9 @@ vi.mock('@/lib/agents', () => ({
 }));
 
 import AgentConfigForm from '@/components/agent-config-form';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 const models: ModelCatalogItem[] = [
   { id: 'openai/gpt-4o', provider: 'openai', aliases: ['gpt-4o'], supportsTools: true, contextWindow: 128000, pricing: { inputPer1M: 2.5, outputPer1M: 10 }, status: 'approved', sourceDate: '2026-11-02' },

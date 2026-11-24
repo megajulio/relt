@@ -6,8 +6,7 @@
  * «primera respuesta (inferida)» y mostrar la regla literal junto a ellos.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-
+import { screen, waitFor } from '@testing-library/react';
 const mocks = vi.hoisted(() => ({
   getPlatformClients: vi.fn(),
 }));
@@ -22,6 +21,9 @@ vi.mock('@/components/dashboard/DashboardAuthProvider', () => ({
 }));
 
 import PlatformClientsPage from '@/app/dashboard/platform/clients/page';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'es');
 
 const overview = {
   generatedAt: '2026-01-02T03:04:05.000Z',
@@ -87,7 +89,7 @@ describe('0.1b (K1) · el sexto paso es una inferencia', () => {
     render(<PlatformClientsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Organizations')).toBeTruthy();
+      expect(screen.getByText('Organizaciones')).toBeTruthy();
     });
 
     // El sexto paso (funnel y/o fila) se rotula como inferencia.

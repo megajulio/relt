@@ -5,8 +5,7 @@
  * /dashboard/platform/clients tiene que ver "Not authorized" y ningún dato.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-
+import { screen, waitFor } from '@testing-library/react';
 const mocks = vi.hoisted(() => ({
   getPlatformClients: vi.fn(),
 }));
@@ -21,6 +20,9 @@ vi.mock('@/components/dashboard/DashboardAuthProvider', () => ({
 }));
 
 import PlatformClientsPage from '@/app/dashboard/platform/clients/page';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 beforeEach(() => {
   mocks.getPlatformClients.mockReset();

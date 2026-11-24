@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import AgentConfigForm from '@/components/agent-config-form';
 import type { AgentDetail } from '@/lib/agents';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 /**
  * U0 · Smoke test del harness: valida que Vitest + jsdom + Testing Library

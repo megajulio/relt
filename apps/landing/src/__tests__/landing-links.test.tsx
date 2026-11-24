@@ -1,8 +1,16 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import LandingV2 from '@/components/landing/LandingV2';
+import { renderWithI18n } from './render-with-i18n';
+
+// Orden #62: el selector de idioma vive en la cabecera de la landing y usa `useRouter`.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/',
+}));
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'en');
 
 /**
  * Orden #38 · enlaces internos de la home.

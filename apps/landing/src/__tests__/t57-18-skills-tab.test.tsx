@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 /**
  * T57-18 (Orden #57 · Bloque 3 · ANEXO-57-G) — pestaña Skills del detalle del agente.
  * Criterio: el binding ofrece también las skills de la org; y, por A-7, no se les ofrece
@@ -26,6 +25,9 @@ vi.mock('@/lib/skills', () => ({
 }));
 
 import AgentSkillsForm from '@/components/agent-skills-form';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'es');
 
 const AGENT = {
   id: 'a1',

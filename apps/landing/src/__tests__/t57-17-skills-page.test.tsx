@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 /**
  * T57-17 (Orden #57 · Bloque 3 · ANEXO-57-G) — página de skills (`/dashboard/skills`).
  * Criterios: las skills del repositorio aparecen de solo lectura; se puede crear desde una
@@ -28,6 +27,9 @@ vi.mock('@/lib/skills', () => ({
 }));
 
 import SkillsPage from '@/app/dashboard/skills/page';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'es');
 
 describe('T57-17 · página de skills', () => {
   afterEach(() => {

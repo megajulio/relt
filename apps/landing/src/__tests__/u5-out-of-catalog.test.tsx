@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import type { AgentDetail } from '@/lib/agents';
 import type { ModelCatalogItem } from '@/lib/models';
 
@@ -19,6 +19,9 @@ vi.mock('@/lib/agents', () => ({
 }));
 
 import AgentConfigForm from '@/components/agent-config-form';
+import { renderWithI18n } from './render-with-i18n';
+
+const render = (ui: Parameters<typeof renderWithI18n>[0]) => renderWithI18n(ui, 'es');
 
 const models: ModelCatalogItem[] = [
   { id: 'openai/gpt-4o', provider: 'openai', aliases: ['gpt-4o'], supportsTools: true, contextWindow: 128000, pricing: { inputPer1M: 2.5, outputPer1M: 10 }, status: 'approved', sourceDate: '2026-11-02' },
@@ -56,7 +59,7 @@ describe('U5 · aviso de modelo fuera del catálogo ', () => {
     render(<AgentConfigForm agent={agentWith('gpt-4o')} onSaved={() => {}} />);
     await screen.findAllByRole('option', { name: 'openai/gpt-4o' });
 
-    const response = screen.getByLabelText('Response model') as HTMLSelectElement;
+    const response = screen.getByLabelText('Modelo de respuesta') as HTMLSelectElement;
     expect(response.value).toBe('gpt-4o');
     expect(optionValues(response)).toContain('gpt-4o');
     expect(warning()).toBeNull();
@@ -66,7 +69,7 @@ describe('U5 · aviso de modelo fuera del catálogo ', () => {
     render(<AgentConfigForm agent={agentWith('invented/model')} onSaved={() => {}} />);
     await screen.findAllByRole('option', { name: 'openai/gpt-4o' });
 
-    const response = screen.getByLabelText('Response model') as HTMLSelectElement;
+    const response = screen.getByLabelText('Modelo de respuesta') as HTMLSelectElement;
     expect(response.value).toBe('invented/model');
     expect(optionValues(response)).toContain('invented/model');
     expect(warning()).not.toBeNull();
@@ -76,7 +79,7 @@ describe('U5 · aviso de modelo fuera del catálogo ', () => {
     render(<AgentConfigForm agent={agentWith('invented/model')} onSaved={() => {}} />);
     await screen.findAllByRole('option', { name: 'openai/gpt-4o' });
 
-    fireEvent.change(screen.getByLabelText('Tone'), { target: { value: 'formal' } });
+    fireEvent.change(screen.getByLabelText('Tono'), { target: { value: 'formal' } });
     fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
     await waitFor(() => expect(mocks.patchAgentConfig).toHaveBeenCalledTimes(1));
