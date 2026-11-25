@@ -23,7 +23,17 @@ const CODE_KEYS: Record<string, string> = {
   skill_limit_reached: 'errors.skill_limit_reached',
   skill_read_only: 'errors.skill_read_only',
   skill_not_found: 'errors.skill_not_found',
+  // Orden #64 · ANEXO-64-E (E-2): códigos nuevos del Bloque 1.
+  skill_not_published: 'errors.skill_not_published',
+  skill_archived: 'errors.skill_archived',
+  nothing_to_publish: 'errors.nothing_to_publish',
+  publish_conflict: 'errors.publish_conflict',
+  invalid_status: 'errors.invalid_status',
+  skill_invalid_name: 'errors.skill_invalid_name',
+  invalid_control_chars: 'errors.invalid_control_chars',
+  skill_version_not_found: 'errors.skill_version_not_found',
 };
+
 
 /** Texto en lenguaje claro para un error de skills (G-4.2), en el idioma activo. */
 export function skillErrorMessage(t: TFunction, info: SkillErrorInfo): string {

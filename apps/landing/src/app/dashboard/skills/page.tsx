@@ -1,11 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import {
   createOrgSkill,
+  getPublishPreview,
+  listSkillVersions,
   listSkillsWithTools,
   patchOrgSkill,
+  publishOrgSkill,
+  type PublishPreview,
+  type SkillBump,
+  type SkillStatus,
+  type SkillVersionRecord,
   type SkillWithTools,
 } from '@/lib/skills';
 import { capabilityPhrases } from '@/lib/skill-labels';
@@ -18,14 +25,34 @@ const inputCls =
 
 const labelCls = 'block text-sm font-medium text-gray-400 mb-1';
 
+/** V8: el orden es RELT → activas → borradores → archivadas. */
+const GROUP: Record<SkillStatus, number> = { active: 1, draft: 2, archived: 3 };
+
+function groupOf(skill: SkillWithTools): number {
+  if (skill.kind === 'repo') return 0;
+  return GROUP[skill.status ?? 'archived'];
+}
+
+function stateKey(skill: SkillWithTools): string {
+  return `skills.state.${skill.status ?? 'archived'}`;
+}
+
+function bumpKey(bump: SkillBump): string {
+  return `skills.bump.${bump}`;
+}
+
 /**
- * Orden #57 · Bloque 3 (ANEXO-57-G) · D7 / T57-17 — página de skills (`/dashboard/skills`).
+ * Orden #64 · ANEXO-64-E · E-2 (V8 y V9) — página de skills (`/dashboard/skills`).
  *
- * - las skills del repositorio aparecen «De RELT», de solo lectura;
- * - las de la org se crean desde una base (tools como checkboxes, contador n/8000), se
- *   editan y se archivan; un 409 al archivar muestra «La usan N agentes»;
- * - los errores se muestran en lenguaje claro (G-4.2). El panel NO inventa las tools:
- *   las lee de la API (G-3).
+ * - la lista va en el orden RELT → activas → borradores → archivadas, con el estado,
+ *   la `current_version` («Sin publicar» en un borrador sin versiones) y «Cambios sin
+ *   publicar» en las activas que los tienen;
+ * - las acciones dependen del estado; después de cada acción se vuelve a pedir la lista
+ *   y el aviso de éxito sale solo con un 2xx; mientras se envía, el botón queda
+ *   deshabilitado (dos clics son un pedido);
+ * - publicar usa la vista previa (`publish-preview`), manda `expected_version` y avisa
+ *   del MAJOR (V7); `publish_conflict` no publica solo;
+ * - el historial va de la más nueva a la más vieja, en el orden de la API.
  */
 export default function SkillsPage() {
   const t = useT();
@@ -46,9 +73,34 @@ export default function SkillsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const [publishing, setPublishing] = useState<SkillWithTools | null>(null);
+  const [preview, setPreview] = useState<PublishPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [changelog, setChangelog] = useState('');
+  const [publishSaving, setPublishSaving] = useState(false);
+  const [publishFieldError, setPublishFieldError] = useState<string | null>(null);
+
+  const [historyOf, setHistoryOf] = useState<SkillWithTools | null>(null);
+  const [versions, setVersions] = useState<SkillVersionRecord[] | null>(null);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [versionsError, setVersionsError] = useState<string | null>(null);
+
+  const submitBusy = useRef(false);
+  const publishBusy = useRef(false);
+
   const bases = useMemo(() => skills.filter((s) => s.kind === 'repo'), [skills]);
   const baseSkill = bases.find((s) => s.name === base);
   const baseTools = baseSkill?.tools ?? [];
+
+  const ordered = useMemo(
+    () =>
+      skills
+        .map((skill, index) => ({ skill, index }))
+        .sort((a, b) => groupOf(a.skill) - groupOf(b.skill) || a.index - b.index)
+        .map((entry) => entry.skill),
+    [skills],
+  );
 
   const refresh = useCallback(async () => {
     const items = await listSkillsWithTools();
@@ -69,7 +121,7 @@ export default function SkillsPage() {
         }
       })
       .catch(() => {
-        if (!cancelled) setLoadError('No se pudieron cargar las skills.');
+        if (!cancelled) setLoadError(t('skills.error.cargar'));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -77,7 +129,7 @@ export default function SkillsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   function resetForm() {
     setEditing(null);
@@ -108,16 +160,19 @@ export default function SkillsPage() {
   }
 
   function toggleTool(tool: string) {
-    setTools((prev) => (prev.includes(tool) ? prev.filter((t) => t !== tool) : [...prev, tool]));
+    setTools((prev) => (prev.includes(tool) ? prev.filter((item) => item !== tool) : [...prev, tool]));
   }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (submitBusy.current) return;
+    submitBusy.current = true;
     setFormError(null);
     setNotice(null);
     setSaving(true);
     try {
       if (editing) {
+        // V1/A-5: el PATCH de edición NO manda `name` ni `base_skill` (400 field_read_only).
         await patchOrgSkill(editing, {
           display_name: displayName,
           description,
@@ -141,23 +196,156 @@ export default function SkillsPage() {
     } catch (err) {
       setFormError(skillErrorFrom(t, err));
     } finally {
+      submitBusy.current = false;
       setSaving(false);
     }
   }
 
   async function handleArchive(skill: SkillWithTools) {
+    if (submitBusy.current) return;
+    submitBusy.current = true;
     setFormError(null);
     setNotice(null);
+    setSaving(true);
     try {
       await patchOrgSkill(skill.name, { status: 'archived' });
       setNotice(t('skills.notice.archived'));
       await refresh();
     } catch (err) {
       setFormError(skillErrorFrom(t, err));
+    } finally {
+      submitBusy.current = false;
+      setSaving(false);
     }
   }
 
+  async function handleRestore(skill: SkillWithTools) {
+    if (submitBusy.current) return;
+    submitBusy.current = true;
+    setFormError(null);
+    setNotice(null);
+    setSaving(true);
+    try {
+      const updated = await patchOrgSkill(skill.name, { status: 'active' });
+      // V2/A-5: el aviso sale del estado de la RESPUESTA (activa o borrador).
+      setNotice(
+        updated.status === 'draft'
+          ? t('skills.notice.restored-draft')
+          : t('skills.notice.restored-active'),
+      );
+      await refresh();
+    } catch (err) {
+      setFormError(skillErrorFrom(t, err));
+    } finally {
+      submitBusy.current = false;
+      setSaving(false);
+    }
+  }
+
+  async function loadPreview(skillName: string) {
+    setPreview(null);
+    setPreviewError(null);
+    setPreviewLoading(true);
+    try {
+      setPreview(await getPublishPreview(skillName));
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === 'nothing_to_publish') {
+        setPreviewError(t('skills.preview.nada'));
+        await refresh();
+      } else if (code === 'skill_archived') {
+        setPreviewError(t('skills.preview.archivada'));
+        await refresh();
+      } else {
+        setPreviewError(skillErrorFrom(t, err));
+      }
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  async function openPublish(skill: SkillWithTools) {
+    setPublishing(skill);
+    setChangelog('');
+    setPublishFieldError(null);
+    setNotice(null);
+    await loadPreview(skill.name);
+  }
+
+  function closePublish() {
+    setPublishing(null);
+    setPreview(null);
+    setPreviewError(null);
+    setPublishFieldError(null);
+  }
+
+  async function submitPublish() {
+    if (!publishing || !preview) return;
+    if (publishBusy.current) return;
+    publishBusy.current = true;
+    setPublishSaving(true);
+    setPublishFieldError(null);
+    setPreviewError(null);
+    try {
+      // A-5: se manda `expected_version` = la versión de la vista previa.
+      await publishOrgSkill(publishing.name, {
+        changelog: changelog || undefined,
+        expected_version: preview.next_version,
+      });
+      setNotice(t('skills.notice.published'));
+      closePublish();
+      await refresh();
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === 'publish_conflict') {
+        // A-5: pide otra vista previa, lo avisa y NO publica solo.
+        await loadPreview(publishing.name);
+        setPreviewError(t('skills.preview.conflicto'));
+      } else if (code === 'nothing_to_publish') {
+        setPreviewError(t('skills.preview.nada'));
+        await refresh();
+      } else if (code === 'skill_archived') {
+        setPreviewError(t('skills.preview.archivada'));
+        await refresh();
+      } else if (code === 'field_too_long') {
+        // A-5: el error va en el campo.
+        setPublishFieldError(skillErrorFrom(t, err));
+      } else {
+        setPreviewError(skillErrorFrom(t, err));
+      }
+    } finally {
+      publishBusy.current = false;
+      setPublishSaving(false);
+    }
+  }
+
+  async function openHistory(skill: SkillWithTools) {
+    setHistoryOf(skill);
+    setVersions(null);
+    setVersionsError(null);
+    setNotice(null);
+    setVersionsLoading(true);
+    try {
+      const res = await listSkillVersions(skill.name);
+      setVersions(res.versions);
+    } catch (err) {
+      setVersionsError(skillErrorFrom(t, err));
+      setVersions([]);
+    } finally {
+      setVersionsLoading(false);
+    }
+  }
+
+  function closeHistory() {
+    setHistoryOf(null);
+    setVersions(null);
+    setVersionsError(null);
+  }
+
   const chars = countChars(instructions);
+  const changelogChars = countChars(changelog);
+
+  const actionBtn = 'text-sm disabled:opacity-40 disabled:cursor-not-allowed';
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -173,6 +361,16 @@ export default function SkillsPage() {
           {loadError}
         </div>
       )}
+      {formError && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-300 text-sm">
+          {formError}
+        </div>
+      )}
+      {notice && (
+        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-green-300 text-sm">
+          {notice}
+        </div>
+      )}
       {loading && <div className="text-gray-400">{t("skills.cargando-skills")}</div>}
 
       {!loading && (
@@ -182,12 +380,21 @@ export default function SkillsPage() {
               <tr className="border-b border-gray-800">
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">{t("skills.skill")}</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">{t("skills.origen")}</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">{t("skills.estado")}</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">{t("skills.version")}</th>
                 <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">{t("skills.acciones")}</th>
               </tr>
             </thead>
             <tbody>
-              {skills.map((skill) => (
-                <tr key={skill.name} className="border-b border-gray-800 last:border-0">
+              {ordered.map((skill) => (
+                <tr
+                  key={skill.name}
+                  data-testid="skill-row"
+                  data-name={skill.name}
+                  data-kind={skill.kind}
+                  data-state={skill.kind === 'repo' ? 'repo' : skill.status}
+                  className="border-b border-gray-800 last:border-0"
+                >
                   <td className="px-6 py-4">
                     <div className="text-white font-medium">{skill.display_name ?? skill.name}</div>
                     <div className="text-xs text-gray-500 font-mono">{skill.name}</div>
@@ -202,25 +409,67 @@ export default function SkillsPage() {
                       <span className="text-blue-300">{t("skills.de-tu-organizacion")}</span>
                     )}
                   </td>
+                  <td className="px-6 py-4 text-sm text-gray-300">
+                    {skill.kind === 'repo' ? (
+                      <span className="text-gray-500">{t("skills.solo-lectura")}</span>
+                    ) : (
+                      <span data-testid="skill-state">
+                        {t(stateKey(skill))}
+                        {skill.has_unpublished_changes ? ` · ${t('skills.cambios-sin-publicar')}` : ''}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-300">
+                    {skill.kind === 'repo'
+                      ? skill.latest_version
+                      : skill.current_version ?? t('skills.sin-publicar')}
+                  </td>
                   <td className="px-6 py-4 text-right">
                     {skill.kind === 'repo' ? (
                       <span className="text-xs text-gray-500">{t("skills.solo-lectura")}</span>
                     ) : (
                       <div className="flex items-center justify-end gap-3">
-                        <button
-                          type="button"
-                          onClick={() => startEdit(skill)}
-                          className="text-sm text-blue-400 hover:text-blue-300"
-                        >
-                          {t("skills.editar")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleArchive(skill)}
-                          className="text-sm text-red-400 hover:text-red-300"
-                        >
-                          {t("skills.archivar")}
-                        </button>
+                        {skill.status === 'draft' && (
+                          <>
+                            <button type="button" onClick={() => startEdit(skill)} disabled={saving} className={`${actionBtn} text-blue-400 hover:text-blue-300`}>
+                              {t("skills.editar")}
+                            </button>
+                            <button type="button" onClick={() => openPublish(skill)} disabled={saving} className={`${actionBtn} text-green-400 hover:text-green-300`}>
+                              {t("skills.publicar")}
+                            </button>
+                            <button type="button" onClick={() => handleArchive(skill)} disabled={saving} className={`${actionBtn} text-red-400 hover:text-red-300`}>
+                              {t("skills.archivar")}
+                            </button>
+                          </>
+                        )}
+                        {skill.status === 'active' && (
+                          <>
+                            <button type="button" onClick={() => startEdit(skill)} disabled={saving} className={`${actionBtn} text-blue-400 hover:text-blue-300`}>
+                              {t("skills.editar")}
+                            </button>
+                            {skill.has_unpublished_changes && (
+                              <button type="button" onClick={() => openPublish(skill)} disabled={saving} className={`${actionBtn} text-green-400 hover:text-green-300`}>
+                                {t("skills.publicar")}
+                              </button>
+                            )}
+                            <button type="button" onClick={() => openHistory(skill)} disabled={saving} className={`${actionBtn} text-gray-400 hover:text-gray-200`}>
+                              {t("skills.historial")}
+                            </button>
+                            <button type="button" onClick={() => handleArchive(skill)} disabled={saving} className={`${actionBtn} text-red-400 hover:text-red-300`}>
+                              {t("skills.archivar")}
+                            </button>
+                          </>
+                        )}
+                        {skill.status === 'archived' && (
+                          <>
+                            <button type="button" onClick={() => handleRestore(skill)} disabled={saving} className={`${actionBtn} text-green-400 hover:text-green-300`}>
+                              {t("skills.restaurar")}
+                            </button>
+                            <button type="button" onClick={() => openHistory(skill)} disabled={saving} className={`${actionBtn} text-gray-400 hover:text-gray-200`}>
+                              {t("skills.historial")}
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </td>
@@ -231,21 +480,15 @@ export default function SkillsPage() {
         </div>
       )}
 
+
       <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
         <h2 className="text-xl font-semibold text-white">
-          {editing ? `Editar ${editing}` : 'Nueva skill'}
+          {editing ? t('skills.editando', { name: editing }) : t('skills.nueva')}
         </h2>
 
-        {formError && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
-            {formError}
-          </div>
-        )}
-        {notice && (
-          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-sm text-green-300">
-            {notice}
-          </div>
-        )}
+        <p className="text-sm text-gray-400">
+          {editing ? t('skills.editar-ayuda') : t('skills.crear-ayuda')}
+        </p>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -261,6 +504,7 @@ export default function SkillsPage() {
               disabled={saving || editing !== null}
               placeholder={t("skills.mi-skill")}
             />
+            {editing && <p className="text-xs text-gray-500 mt-1">{t("skills.campo-no-editable")}</p>}
           </div>
           <div>
             <label htmlFor="skill-base" className={labelCls}>
@@ -279,6 +523,7 @@ export default function SkillsPage() {
                 </option>
               ))}
             </select>
+            {editing && <p className="text-xs text-gray-500 mt-1">{t("skills.campo-no-editable")}</p>}
           </div>
           <div>
             <label htmlFor="skill-display-name" className={labelCls}>
@@ -319,7 +564,11 @@ export default function SkillsPage() {
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
             disabled={saving}
+            aria-describedby="skill-instructions-help"
           />
+          <p id="skill-instructions-help" className="text-xs text-gray-500 mt-1">
+            {t("skills.instrucciones-ayuda")}
+          </p>
         </div>
 
         <div>
@@ -359,11 +608,175 @@ export default function SkillsPage() {
             disabled={saving}
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white font-medium px-6 py-2 rounded-lg"
           >
-            {saving ? 'Guardando...' : 'Guardar'}
+            {saving ? t("skills.guardando") : t("skills.guardar")}
           </button>
         </div>
       </form>
 
+
+      {publishing && (
+        <div
+          role="dialog"
+          aria-label={t('skills.publicar-titulo', { name: publishing.name })}
+          className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5"
+        >
+          <h2 className="text-xl font-semibold text-white">
+            {t('skills.publicar-titulo', { name: publishing.name })}
+          </h2>
+
+          {previewLoading && <div className="text-gray-400">{t('skills.preview.cargando')}</div>}
+          {previewError && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
+              {previewError}
+            </div>
+          )}
+
+          {preview && (
+            <>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="text-gray-500">{t('skills.preview.version')}</div>
+                  <div className="text-white font-mono">{preview.next_version}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500">{t('skills.preview.tipo')}</div>
+                  <div className="text-white">{t(bumpKey(preview.bump))}</div>
+                </div>
+              </div>
+
+              {preview.bump === 'major' && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300">
+                  {preview.agents_on_latest === 0
+                    ? t('skills.major-aviso.cero')
+                    : t('skills.major-aviso', { count: preview.agents_on_latest })}
+                </div>
+              )}
+
+              <div className="space-y-1 text-sm text-gray-300">
+                <div>
+                  {t('skills.preview.tools-agregadas')}:{' '}
+                  {preview.added_tools.length
+                    ? preview.added_tools.join(', ')
+                    : t('skills.preview.sin-capacidades')}
+                </div>
+                <div>
+                  {t('skills.preview.tools-quitadas')}:{' '}
+                  {preview.removed_tools.length
+                    ? preview.removed_tools.join(', ')
+                    : t('skills.preview.sin-capacidades')}
+                </div>
+                {preview.added_tools.length === 0 && preview.removed_tools.length === 0 && (
+                  <div className="text-xs text-gray-500">{t('skills.preview.sin-tools')}</div>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="publish-changelog" className={labelCls}>
+                  {t('skills.changelog')}{' '}
+                  <span className="text-gray-500">
+                    {t('skills.changelog-contador', { n: changelogChars })}
+                  </span>
+                </label>
+                <textarea
+                  id="publish-changelog"
+                  rows={3}
+                  className={inputCls}
+                  value={changelog}
+                  onChange={(e) => setChangelog(e.target.value)}
+                  disabled={publishSaving}
+                  aria-invalid={!!publishFieldError}
+                />
+                {publishFieldError && <p className="text-xs text-red-400 mt-1">{publishFieldError}</p>}
+              </div>
+            </>
+          )}
+
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={closePublish}
+              className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white"
+            >
+              {t('skills.cancelar')}
+            </button>
+            <button
+              type="button"
+              onClick={submitPublish}
+              disabled={publishSaving || !preview}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-white font-medium px-6 py-2 rounded-lg"
+            >
+              {t('skills.preview.publicar')}
+            </button>
+          </div>
+        </div>
+      )}
+
+
+      {historyOf && (
+        <div
+          role="dialog"
+          aria-label={t('skills.historial-titulo', { name: historyOf.name })}
+          className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4"
+        >
+          <h2 className="text-xl font-semibold text-white">
+            {t('skills.historial-titulo', { name: historyOf.name })}
+          </h2>
+
+          {versionsLoading && <div className="text-gray-400">{t('skills.historial.cargando')}</div>}
+          {versionsError && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
+              {versionsError}
+            </div>
+          )}
+
+          {versions && versions.length === 0 && (
+            <div className="text-gray-400">{t('skills.historial-vacia')}</div>
+          )}
+
+          {versions && versions.length > 0 && (
+            <div className="space-y-3">
+              {versions.map((v) => (
+                <div
+                  key={v.version}
+                  data-testid="history-row"
+                  data-version={v.version}
+                  className="border border-gray-800 rounded-lg p-4 space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-white font-mono">{`v${v.version}`}</span>
+                      <span className="text-xs text-gray-400">{t(bumpKey(v.bump))}</span>
+                      {v.version === historyOf.current_version && (
+                        <span className="text-xs text-green-400">{t('skills.historial-vigente')}</span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">{v.published_at}</span>
+                  </div>
+                  <div className="text-sm text-gray-300">
+                    {t('skills.historial.notas')}: {v.changelog ?? '—'}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {t('skills.historial.tools')}:{' '}
+                    {v.allowed_tools.length
+                      ? v.allowed_tools.join(', ')
+                      : t('skills.preview.sin-capacidades')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              onClick={closeHistory}
+              className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white"
+            >
+              {t('skills.cerrar')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
