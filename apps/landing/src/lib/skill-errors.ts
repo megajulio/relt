@@ -23,12 +23,36 @@ const CODE_KEYS: Record<string, string> = {
   skill_limit_reached: 'errors.skill_limit_reached',
   skill_read_only: 'errors.skill_read_only',
   skill_not_found: 'errors.skill_not_found',
+  // Orden #64 · ANEXO-64-E (E-2): códigos nuevos del Bloque 1.
+  skill_not_published: 'errors.skill_not_published',
+  skill_archived: 'errors.skill_archived',
+  nothing_to_publish: 'errors.nothing_to_publish',
+  publish_conflict: 'errors.publish_conflict',
+  invalid_status: 'errors.invalid_status',
+  skill_invalid_name: 'errors.skill_invalid_name',
+  invalid_control_chars: 'errors.invalid_control_chars',
+  skill_version_not_found: 'errors.skill_version_not_found',
+  // ANEXO-64-F (F-2.11, M10): todo código del contrato que llega al panel tiene su texto.
+  invalid_field: 'errors.invalid_field',
+  field_read_only: 'errors.field_read_only',
 };
 
+
 /** Texto en lenguaje claro para un error de skills (G-4.2), en el idioma activo. */
-export function skillErrorMessage(t: TFunction, info: SkillErrorInfo): string {
+export function skillErrorMessage(
+  t: TFunction,
+  info: SkillErrorInfo,
+  fallbackKey = 'errors.fallback',
+): string {
   if (info.code === 'field_too_long') {
+    // ANEXO-64-F (F-2.8, M10): el error de longitud del `changelog` tiene su propio texto.
+    if (info.field === 'changelog') return t('errors.changelog_too_long');
     return t('errors.field_too_long', { field: info.field ?? t('errors.field_default') });
+  }
+  // ANEXO-64-F (F-2.11, M10): `field_read_only` e `invalid_field` llevan el campo en su texto.
+  if (info.code === 'field_read_only' || info.code === 'invalid_field') {
+    const key = info.code === 'field_read_only' ? 'errors.field_read_only' : 'errors.invalid_field';
+    return t(key, { field: info.field ?? t('errors.field_default') });
   }
   if (info.code === 'skill_in_use') {
     return t('errors.skill_in_use', { count: info.agents ?? 0 });
@@ -40,7 +64,7 @@ export function skillErrorMessage(t: TFunction, info: SkillErrorInfo): string {
   if (info.status === 403) {
     return t('errors.role_403');
   }
-  return t('errors.fallback');
+  return t(fallbackKey);
 }
 
 interface ErrorLike {
@@ -54,4 +78,18 @@ interface ErrorLike {
 export function skillErrorFrom(t: TFunction, err: unknown): string {
   const e = (err ?? {}) as ErrorLike;
   return skillErrorMessage(t, { code: e.code, status: e.status, field: e.field, agents: e.meta?.agents });
+}
+
+/**
+ * ANEXO-64-G (G-1.5, N5) — el texto por defecto de un fallo de **carga** (detalle, vista
+ * previa, historial, versiones y catálogo) es «No se pudo cargar. Intenta de nuevo.»
+ * Los códigos conocidos conservan su texto.
+ */
+export function skillLoadErrorFrom(t: TFunction, err: unknown): string {
+  const e = (err ?? {}) as ErrorLike;
+  return skillErrorMessage(
+    t,
+    { code: e.code, status: e.status, field: e.field, agents: e.meta?.agents },
+    'errors.cargar',
+  );
 }

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import { createAgent, type CreateAgentInput } from '@/lib/agents';
-import { listSkills } from '@/lib/skills';
+import { listSkills, type SkillWithTools } from '@/lib/skills';
+import { selectableSkills } from '@/lib/skill-catalog';
 import { buildCreateModelConfig, type ModelStrategyChoice } from '@/lib/model-selection';
 import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem, type ModelErrorTarget } from '@/lib/models';
 import SkillSelect from '@/components/skill-select';
@@ -18,9 +19,6 @@ const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
 
 const labelCls = 'block text-sm font-medium text-gray-400 mb-1';
-
-/** Opción del selector de skill (D5): nombre + capacidades (si el listado trae las tools). */
-type SkillOption = { name: string; tools?: string[] };
 
 export default function CreateAgentPage() {
   const t = useT();
@@ -38,7 +36,7 @@ export default function CreateAgentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<ModelErrorTarget>(null);
-  const [skills, setSkills] = useState<SkillOption[]>([]);
+  const [skills, setSkills] = useState<SkillWithTools[]>([]);
   const [skillsLoading, setSkillsLoading] = useState(true);
   const [skillsError, setSkillsError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelCatalogItem[]>([]);
@@ -48,11 +46,13 @@ export default function CreateAgentPage() {
 
     // El selector de skill (D5) muestra las capacidades de cada skill: `listSkills` trae las
     // tools de cada una (detalle para las de RELT; `allowed_tools` para las de org).
+    // Orden #64 (E-2): el filtro (solo RELT y org `active`) y las capacidades publicadas
+    // los aplica el propio `SkillSelect`.
     listSkills()
       .then((items) => {
         if (cancelled) return;
 
-        setSkills(items.map((item) => ({ name: item.name, tools: item.tools })));
+        setSkills(items);
         setSkillsError(null);
 
         if (!items.some((skill) => skill.name === 'general')) {
@@ -283,7 +283,7 @@ export default function CreateAgentPage() {
               saving ||
               skillsLoading ||
               !!skillsError ||
-              !skills.some((skill) => skill.name === defaultSkill)
+              !selectableSkills(skills).some((skill) => skill.name === defaultSkill)
             }
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium px-6 py-2 rounded-lg transition-colors"
           >

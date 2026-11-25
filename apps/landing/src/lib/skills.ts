@@ -12,6 +12,12 @@ import { api } from './api';
 
 export type SkillKind = 'repo' | 'org';
 
+/** V2: los tres estados de una skill de organización. */
+export type SkillStatus = 'draft' | 'active' | 'archived';
+
+/** V3/A-5: tipo de incremento semántico de una publicación. */
+export type SkillBump = 'initial' | 'major' | 'minor' | 'patch';
+
 export interface SkillListItem {
   name: string;
   latest_version: string;
@@ -26,7 +32,18 @@ export interface SkillListItem {
   base_skill?: string;
   /** Instrucciones (solo si el listado las trae; el detalle de la API sí). */
   instructions?: string;
-  status?: 'active' | 'archived';
+  /** V2: `draft` | `active` | `archived` (solo en skills de org). */
+  status?: SkillStatus;
+  /** A-3: contador entero de la #57 («obsoleto»); el panel NO lo usa. */
+  version?: number;
+  /** V7/A-3: versión publicada vigente (semver) o null si nunca se publicó. */
+  current_version?: string | null;
+  /** A-4: la copia de trabajo difiere de la versión vigente. */
+  has_unpublished_changes?: boolean;
+  /** A-3: tools de la versión vigente, o null si no hay. */
+  published_tools?: string[] | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /** Skill de la lista + sus tools (derivadas del detalle o de `allowed_tools`). */
@@ -49,10 +66,15 @@ export interface SkillDetail {
   latest_version: string;
   versions: SkillVersion[];
   display_name?: string;
+  /** El detalle de una skill de org trae `description` (el de RELT no). */
+  description?: string;
   allowed_tools?: string[];
   base_skill?: string;
-  status?: 'active' | 'archived';
+  status?: SkillStatus;
   instructions?: string;
+  current_version?: string | null;
+  has_unpublished_changes?: boolean;
+  published_tools?: string[] | null;
 }
 
 interface SkillListResponse {
@@ -115,3 +137,75 @@ export interface PatchOrgSkillInput {
 export async function patchOrgSkill(name: string, patch: PatchOrgSkillInput): Promise<SkillDetail> {
   return api.patch<SkillDetail>(`/control/v1/skills/${encodeURIComponent(name)}`, patch);
 }
+
+/**
+ * A-5 — `GET /skills/:name/publish-preview`: la vista previa del diálogo de publicar.
+ * `agents_on_latest` cuenta los agentes que usan la skill en primer lugar sin versión
+ * fijada (aviso MAJOR de V7).
+ */
+export interface PublishPreview {
+  next_version: string;
+  bump: SkillBump;
+  added_tools: string[];
+  removed_tools: string[];
+  agents_on_latest: number;
+}
+
+export async function getPublishPreview(name: string): Promise<PublishPreview> {
+  return api.get<PublishPreview>(
+    `/control/v1/skills/${encodeURIComponent(name)}/publish-preview`,
+  );
+}
+
+export interface PublishInput {
+  changelog?: string;
+  /** A-5: la versión de la vista previa; si no coincide, 409 `publish_conflict`. */
+  expected_version?: string;
+}
+
+export interface PublishResult extends SkillDetail {
+  published_version: string;
+  bump: SkillBump;
+  changelog: string | null;
+}
+
+export async function publishOrgSkill(name: string, input: PublishInput): Promise<PublishResult> {
+  return api.post<PublishResult>(`/control/v1/skills/${encodeURIComponent(name)}/publish`, input);
+}
+
+/**
+ * V5/A-5 — una versión del historial (`GET /skills/:name/versions`). La API las
+ * devuelve de la más nueva a la más vieja en orden semver; el panel respeta ese orden.
+ */
+export interface SkillVersionRecord {
+  version: string;
+  bump: SkillBump;
+  display_name: string;
+  description: string;
+  instructions: string;
+  allowed_tools: string[];
+  base_skill: string;
+  changelog: string | null;
+  published_at: string;
+  /** `published_by` llega de la API pero el panel NO lo muestra. */
+  published_by: string | null;
+}
+
+export async function listSkillVersions(
+  name: string,
+): Promise<{ versions: SkillVersionRecord[]; total: number }> {
+  return api.get<{ versions: SkillVersionRecord[]; total: number }>(
+    `/control/v1/skills/${encodeURIComponent(name)}/versions`,
+  );
+}
+
+/**
+ * V8 — los selectores (alta y pestaña Skills) muestran solo las skills de RELT y las
+ * de org `active`. Un `draft` no se puede asignar (V2) y una `archived` tampoco.
+ *
+ * Definido en `./skill-catalog` (los selectores lo importan de ahí, para que mockear
+ * este módulo en los tests no lo desactive) y re-exportado aquí como superficie pública.
+ */
+export { selectableSkills, selectorTools } from './skill-catalog';
+
+
