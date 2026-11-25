@@ -70,6 +70,16 @@ async function renderForm(binding: { skill: string; version?: string } | undefin
   );
 }
 
+/** Variante para una skill que ya no está en el catálogo (no hay versiones que esperar). */
+async function renderFormUnavailable(skill: string) {
+  const ag = agent({ skill });
+  mocks.getAgent.mockResolvedValue(ag);
+  renderWithI18n(<AgentSkillsForm agent={ag} onSaved={() => {}} />, 'es');
+  await waitFor(() =>
+    expect(screen.queryByRole('radio', { name: /Fijar versión/ })).not.toBeNull(),
+  );
+}
+
 const skillSelect = () => screen.getAllByRole('combobox')[0] as HTMLSelectElement;
 const versionSelect = () => screen.getByLabelText('Versión de la skill') as HTMLSelectElement;
 const saveButton = () => screen.getByRole('button', { name: 'Guardar cambios' }) as HTMLButtonElement;
@@ -135,5 +145,13 @@ describe('T64-13 · fijar una versión', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Fijar versión/ }));
     fireEvent.click(saveButton());
     await waitFor(() => expect(screen.queryByText('Esa versión no existe para esa skill.')).not.toBeNull());
+  });
+
+  it('guardar no reemplaza una skill que ya no está en el catálogo', async () => {
+    await renderFormUnavailable('vieja');
+    fireEvent.click(screen.getByRole('radio', { name: /Fijar versión/ }));
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(mocks.patchAgentConfig).toHaveBeenCalled());
+    expect(mocks.patchAgentConfig.mock.calls[0][1]).toEqual({ skillBinding: { skill: 'vieja' } });
   });
 });

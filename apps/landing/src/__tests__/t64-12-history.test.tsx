@@ -117,4 +117,13 @@ describe('T64-12 · historial', () => {
     await waitFor(() => expect(historyRows().length).toBe(2));
     expect(screen.queryByText('u-secret')).toBeNull();
   });
+
+  it('muestra el tipo, la fecha y las tools de cada versión', async () => {
+    const dialog = await openHistory();
+    await waitFor(() => expect(historyRows().length).toBe(2));
+    const older = dialog.querySelector('[data-version="1.9.0"]') as HTMLElement;
+    expect(within(older).queryByText('Menor (agrega capacidades)')).not.toBeNull();
+    expect(within(older).queryByText(/2026-01-01T00:00:00Z/)).not.toBeNull();
+    expect(within(older).queryByText(/products\.search/)).not.toBeNull();
+  });
 });

@@ -165,6 +165,8 @@ describe('T64-10 · lista de skills', () => {
   it('el PATCH de edición no manda name ni base_skill', async () => {
     await renderPage();
     fireEvent.click(within(row('activa')).getByText('Editar'));
+    expect((screen.getByLabelText('Nombre') as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText('Skill base') as HTMLSelectElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
     await waitFor(() => expect(mocks.patchOrgSkill).toHaveBeenCalled());
     const [name, patch] = mocks.patchOrgSkill.mock.calls[0];
@@ -172,5 +174,41 @@ describe('T64-10 · lista de skills', () => {
     expect(Object.prototype.hasOwnProperty.call(patch, 'name')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(patch, 'base_skill')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(patch, 'baseSkill')).toBe(false);
+  });
+
+  it('crear avisa que quedó en borrador y que hay que publicarla', async () => {
+    await renderPage();
+    mocks.createOrgSkill.mockResolvedValueOnce({});
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'nueva-skill' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Skill creada en borrador. Publícala para poder usarla.'),
+      ).not.toBeNull(),
+    );
+  });
+
+  it('editar avisa que el cambio no se usa hasta publicarlo', async () => {
+    await renderPage();
+    fireEvent.click(within(row('activa')).getByText('Editar'));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Skill actualizada. El cambio no se usa hasta publicarla.'),
+      ).not.toBeNull(),
+    );
+  });
+
+  it('los roles: un 403 se muestra en lenguaje claro', async () => {
+    await renderPage();
+    mocks.patchOrgSkill.mockRejectedValueOnce(
+      Object.assign(new Error('forbidden'), { status: 403 }),
+    );
+    fireEvent.click(within(row('activa-sin')).getByText('Archivar'));
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Tu rol no permite crear ni editar skills. Pídeselo a un administrador.'),
+      ).not.toBeNull(),
+    );
   });
 });

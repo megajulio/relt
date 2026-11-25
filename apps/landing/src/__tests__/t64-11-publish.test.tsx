@@ -175,4 +175,25 @@ describe('T64-11 · publicar', () => {
     await waitFor(() => expect(mocks.publishOrgSkill).toHaveBeenCalledTimes(1));
     expect(mocks.publishOrgSkill).toHaveBeenCalledTimes(1);
   });
+
+  it('skill_archived lo explica y refresca la lista', async () => {
+    mocks.publishOrgSkill.mockRejectedValueOnce(
+      Object.assign(new Error('arch'), { status: 409, code: 'skill_archived' }),
+    );
+    const dialog = await openDialog();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publicar' }));
+    await waitFor(() =>
+      expect(screen.queryByText('La skill está archivada y no se puede publicar.')).not.toBeNull(),
+    );
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2);
+  });
+
+  it('nothing_to_publish refresca la lista', async () => {
+    mocks.publishOrgSkill.mockRejectedValueOnce(
+      Object.assign(new Error('nothing'), { status: 409, code: 'nothing_to_publish' }),
+    );
+    const dialog = await openDialog();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publicar' }));
+    await waitFor(() => expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2));
+  });
 });
