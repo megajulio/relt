@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
+import Modal from '@/components/modal';
 import {
   createOrgSkill,
   getPublishPreview,
+  getSkill,
   listSkillVersions,
   listSkillsWithTools,
   patchOrgSkill,
@@ -18,7 +20,7 @@ import {
 import { capabilityPhrases } from '@/lib/skill-labels';
 import { skillErrorFrom } from '@/lib/skill-errors';
 import { countChars, MAX_SKILL_INSTRUCTIONS } from '@/lib/count-chars';
-import { useT } from '@/i18n/provider';
+import { useLocale, useT } from '@/i18n/provider';
 
 const inputCls =
   'w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500';
@@ -56,6 +58,7 @@ function bumpKey(bump: SkillBump): string {
  */
 export default function SkillsPage() {
   const t = useT();
+  const locale = useLocale();
   useDashboardAuth();
 
   const [skills, setSkills] = useState<SkillWithTools[]>([]);
@@ -63,6 +66,9 @@ export default function SkillsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [editing, setEditing] = useState<string | null>(null);
+  // M3: el detalle de la skill que se edita (el listado no trae `instructions`).
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const [base, setBase] = useState('');
   const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -88,6 +94,16 @@ export default function SkillsPage() {
 
   const submitBusy = useRef(false);
   const publishBusy = useRef(false);
+  // M6: identificadores de pedido para descartar respuestas atrasadas de otra skill.
+  const editRequest = useRef(0);
+  const previewRequest = useRef(0);
+  const historyRequest = useRef(0);
+
+  // M10: la fecha del historial, con el formato del idioma activo (no la ISO cruda).
+  const dateFmt = useMemo(
+    () => new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }),
+    [locale],
+  );
 
   const bases = useMemo(() => skills.filter((s) => s.kind === 'repo'), [skills]);
   const baseSkill = bases.find((s) => s.name === base);
@@ -102,11 +118,18 @@ export default function SkillsPage() {
     [skills],
   );
 
+  // M7: un refresco que falla NO rompe el aviso de éxito; muestra aparte su propio texto.
   const refresh = useCallback(async () => {
-    const items = await listSkillsWithTools();
-    setSkills(items);
-    return items;
-  }, []);
+    try {
+      const items = await listSkillsWithTools();
+      setSkills(items);
+      setLoadError(null);
+      return items;
+    } catch {
+      setLoadError(t('skills.error.cargar'));
+      return null;
+    }
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,6 +156,8 @@ export default function SkillsPage() {
 
   function resetForm() {
     setEditing(null);
+    setEditLoading(false);
+    setEditError(null);
     setName('');
     setDisplayName('');
     setDescription('');
@@ -142,16 +167,37 @@ export default function SkillsPage() {
     setFormError(null);
   }
 
-  function startEdit(skill: SkillWithTools) {
+  // M3: al editar se pide el DETALLE (`GET …/:name`) y el formulario se llena con él. Mientras
+  // carga, o si falla, no se puede guardar, y el fallo se explica. M6: una respuesta atrasada
+  // de otra skill se descarta.
+  async function startEdit(skill: SkillWithTools) {
+    const req = ++editRequest.current;
     setEditing(skill.name);
+    setEditError(null);
+    setEditLoading(true);
+    setFormError(null);
+    setNotice(null);
     setName(skill.name);
     setDisplayName(skill.display_name ?? skill.name);
     setDescription(skill.description ?? '');
-    setInstructions(skill.instructions ?? '');
-    setTools(skill.allowed_tools ?? skill.tools);
     setBase(skill.base_skill ?? '');
-    setFormError(null);
-    setNotice(null);
+    setInstructions('');
+    setTools(skill.allowed_tools ?? skill.tools);
+    try {
+      const detail = await getSkill(skill.name);
+      if (editRequest.current !== req) return;
+      setName(detail.name);
+      setDisplayName(detail.display_name ?? detail.name);
+      setDescription(detail.description ?? '');
+      setBase(detail.base_skill ?? '');
+      setInstructions(detail.instructions ?? '');
+      setTools(detail.allowed_tools ?? []);
+    } catch (err) {
+      if (editRequest.current !== req) return;
+      setEditError(skillErrorFrom(t, err));
+    } finally {
+      if (editRequest.current === req) setEditLoading(false);
+    }
   }
 
   function handleBaseChange(next: string) {
@@ -166,6 +212,8 @@ export default function SkillsPage() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (submitBusy.current) return;
+    // M3: no se puede guardar mientras carga el detalle o si falló.
+    if (editing !== null && (editLoading || editError !== null)) return;
     submitBusy.current = true;
     setFormError(null);
     setNotice(null);
@@ -242,13 +290,19 @@ export default function SkillsPage() {
     }
   }
 
-  async function loadPreview(skillName: string) {
+  // M6: la vista previa que no es de la skill actual se descarta. Devuelve `true` si cargó bien.
+  async function loadPreview(skillName: string): Promise<boolean> {
+    const req = ++previewRequest.current;
     setPreview(null);
     setPreviewError(null);
     setPreviewLoading(true);
     try {
-      setPreview(await getPublishPreview(skillName));
+      const p = await getPublishPreview(skillName);
+      if (previewRequest.current !== req) return false;
+      setPreview(p);
+      return true;
     } catch (err) {
+      if (previewRequest.current !== req) return false;
       const code = (err as { code?: string }).code;
       if (code === 'nothing_to_publish') {
         setPreviewError(t('skills.preview.nada'));
@@ -259,8 +313,9 @@ export default function SkillsPage() {
       } else {
         setPreviewError(skillErrorFrom(t, err));
       }
+      return false;
     } finally {
-      setPreviewLoading(false);
+      if (previewRequest.current === req) setPreviewLoading(false);
     }
   }
 
@@ -298,9 +353,10 @@ export default function SkillsPage() {
     } catch (err) {
       const code = (err as { code?: string }).code;
       if (code === 'publish_conflict') {
-        // A-5: pide otra vista previa, lo avisa y NO publica solo.
-        await loadPreview(publishing.name);
-        setPreviewError(t('skills.preview.conflicto'));
+        // A-5/F-2.10: pide otra vista previa, lo avisa y NO publica solo. Si la segunda vista
+        // previa FALLA, se muestra SU error y no el de conflicto.
+        const ok = await loadPreview(publishing.name);
+        if (ok) setPreviewError(t('skills.preview.conflicto'));
       } else if (code === 'nothing_to_publish') {
         setPreviewError(t('skills.preview.nada'));
         await refresh();
@@ -319,7 +375,10 @@ export default function SkillsPage() {
     }
   }
 
+  // M6/M12: el historial que no es de la skill actual se descarta; con error NO se muestra el
+  // texto de vacío.
   async function openHistory(skill: SkillWithTools) {
+    const req = ++historyRequest.current;
     setHistoryOf(skill);
     setVersions(null);
     setVersionsError(null);
@@ -327,12 +386,14 @@ export default function SkillsPage() {
     setVersionsLoading(true);
     try {
       const res = await listSkillVersions(skill.name);
+      if (historyRequest.current !== req) return;
       setVersions(res.versions);
     } catch (err) {
+      if (historyRequest.current !== req) return;
       setVersionsError(skillErrorFrom(t, err));
       setVersions([]);
     } finally {
-      setVersionsLoading(false);
+      if (historyRequest.current === req) setVersionsLoading(false);
     }
   }
 
@@ -346,6 +407,10 @@ export default function SkillsPage() {
   const changelogChars = countChars(changelog);
 
   const actionBtn = 'text-sm disabled:opacity-40 disabled:cursor-not-allowed';
+  // M12: mientras se publica, las acciones de la lista quedan deshabilitadas.
+  const listBusy = saving || publishing !== null;
+  // M3: no se puede guardar mientras carga el detalle o si falló.
+  const editBlocked = editing !== null && (editLoading || editError !== null);
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -415,7 +480,10 @@ export default function SkillsPage() {
                     ) : (
                       <span data-testid="skill-state">
                         {t(stateKey(skill))}
-                        {skill.has_unpublished_changes ? ` · ${t('skills.cambios-sin-publicar')}` : ''}
+                        {/* M9: «Cambios sin publicar» SOLO en las activas. */}
+                        {skill.status === 'active' && skill.has_unpublished_changes
+                          ? ` · ${t('skills.cambios-sin-publicar')}`
+                          : ''}
                       </span>
                     )}
                   </td>
@@ -431,41 +499,41 @@ export default function SkillsPage() {
                       <div className="flex items-center justify-end gap-3">
                         {skill.status === 'draft' && (
                           <>
-                            <button type="button" onClick={() => startEdit(skill)} disabled={saving} className={`${actionBtn} text-blue-400 hover:text-blue-300`}>
+                            <button type="button" onClick={() => startEdit(skill)} disabled={listBusy} className={`${actionBtn} text-blue-400 hover:text-blue-300`}>
                               {t("skills.editar")}
                             </button>
-                            <button type="button" onClick={() => openPublish(skill)} disabled={saving} className={`${actionBtn} text-green-400 hover:text-green-300`}>
+                            <button type="button" onClick={() => openPublish(skill)} disabled={listBusy} className={`${actionBtn} text-green-400 hover:text-green-300`}>
                               {t("skills.publicar")}
                             </button>
-                            <button type="button" onClick={() => handleArchive(skill)} disabled={saving} className={`${actionBtn} text-red-400 hover:text-red-300`}>
+                            <button type="button" onClick={() => handleArchive(skill)} disabled={listBusy} className={`${actionBtn} text-red-400 hover:text-red-300`}>
                               {t("skills.archivar")}
                             </button>
                           </>
                         )}
                         {skill.status === 'active' && (
                           <>
-                            <button type="button" onClick={() => startEdit(skill)} disabled={saving} className={`${actionBtn} text-blue-400 hover:text-blue-300`}>
+                            <button type="button" onClick={() => startEdit(skill)} disabled={listBusy} className={`${actionBtn} text-blue-400 hover:text-blue-300`}>
                               {t("skills.editar")}
                             </button>
                             {skill.has_unpublished_changes && (
-                              <button type="button" onClick={() => openPublish(skill)} disabled={saving} className={`${actionBtn} text-green-400 hover:text-green-300`}>
+                              <button type="button" onClick={() => openPublish(skill)} disabled={listBusy} className={`${actionBtn} text-green-400 hover:text-green-300`}>
                                 {t("skills.publicar")}
                               </button>
                             )}
-                            <button type="button" onClick={() => openHistory(skill)} disabled={saving} className={`${actionBtn} text-gray-400 hover:text-gray-200`}>
+                            <button type="button" onClick={() => openHistory(skill)} disabled={listBusy} className={`${actionBtn} text-gray-400 hover:text-gray-200`}>
                               {t("skills.historial")}
                             </button>
-                            <button type="button" onClick={() => handleArchive(skill)} disabled={saving} className={`${actionBtn} text-red-400 hover:text-red-300`}>
+                            <button type="button" onClick={() => handleArchive(skill)} disabled={listBusy} className={`${actionBtn} text-red-400 hover:text-red-300`}>
                               {t("skills.archivar")}
                             </button>
                           </>
                         )}
                         {skill.status === 'archived' && (
                           <>
-                            <button type="button" onClick={() => handleRestore(skill)} disabled={saving} className={`${actionBtn} text-green-400 hover:text-green-300`}>
+                            <button type="button" onClick={() => handleRestore(skill)} disabled={listBusy} className={`${actionBtn} text-green-400 hover:text-green-300`}>
                               {t("skills.restaurar")}
                             </button>
-                            <button type="button" onClick={() => openHistory(skill)} disabled={saving} className={`${actionBtn} text-gray-400 hover:text-gray-200`}>
+                            <button type="button" onClick={() => openHistory(skill)} disabled={listBusy} className={`${actionBtn} text-gray-400 hover:text-gray-200`}>
                               {t("skills.historial")}
                             </button>
                           </>
@@ -489,6 +557,16 @@ export default function SkillsPage() {
         <p className="text-sm text-gray-400">
           {editing ? t('skills.editar-ayuda') : t('skills.crear-ayuda')}
         </p>
+
+        {/* M3: mientras carga el detalle se avisa; si falla, se explica y no se puede guardar. */}
+        {editing && editLoading && (
+          <div className="text-gray-400 text-sm">{t('skills.cargando-detalle')}</div>
+        )}
+        {editing && editError && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
+            {editError}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -605,7 +683,7 @@ export default function SkillsPage() {
           )}
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || editBlocked}
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white font-medium px-6 py-2 rounded-lg"
           >
             {saving ? t("skills.guardando") : t("skills.guardar")}
@@ -615,15 +693,12 @@ export default function SkillsPage() {
 
 
       {publishing && (
-        <div
-          role="dialog"
-          aria-label={t('skills.publicar-titulo', { name: publishing.name })}
-          className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5"
+        <Modal
+          label={t('skills.publicar-titulo', { name: publishing.name })}
+          title={t('skills.publicar-titulo', { name: publishing.name })}
+          onClose={closePublish}
+          closeDisabled={publishSaving}
         >
-          <h2 className="text-xl font-semibold text-white">
-            {t('skills.publicar-titulo', { name: publishing.name })}
-          </h2>
-
           {previewLoading && <div className="text-gray-400">{t('skills.preview.cargando')}</div>}
           {previewError && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
@@ -636,7 +711,7 @@ export default function SkillsPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <div className="text-gray-500">{t('skills.preview.version')}</div>
-                  <div className="text-white font-mono">{preview.next_version}</div>
+                  <div className="text-white font-mono" data-testid="preview-version">{preview.next_version}</div>
                 </div>
                 <div>
                   <div className="text-gray-500">{t('skills.preview.tipo')}</div>
@@ -656,14 +731,14 @@ export default function SkillsPage() {
                 <div>
                   {t('skills.preview.tools-agregadas')}:{' '}
                   {preview.added_tools.length
-                    ? preview.added_tools.join(', ')
-                    : t('skills.preview.sin-capacidades')}
+                    ? capabilityPhrases(t, preview.added_tools).join(', ')
+                    : t('skills.tools.ninguna')}
                 </div>
                 <div>
                   {t('skills.preview.tools-quitadas')}:{' '}
                   {preview.removed_tools.length
-                    ? preview.removed_tools.join(', ')
-                    : t('skills.preview.sin-capacidades')}
+                    ? capabilityPhrases(t, preview.removed_tools).join(', ')
+                    : t('skills.tools.ninguna')}
                 </div>
                 {preview.added_tools.length === 0 && preview.removed_tools.length === 0 && (
                   <div className="text-xs text-gray-500">{t('skills.preview.sin-tools')}</div>
@@ -695,7 +770,8 @@ export default function SkillsPage() {
             <button
               type="button"
               onClick={closePublish}
-              className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white"
+              disabled={publishSaving}
+              className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t('skills.cancelar')}
             </button>
@@ -708,20 +784,16 @@ export default function SkillsPage() {
               {t('skills.preview.publicar')}
             </button>
           </div>
-        </div>
+        </Modal>
       )}
 
 
       {historyOf && (
-        <div
-          role="dialog"
-          aria-label={t('skills.historial-titulo', { name: historyOf.name })}
-          className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4"
+        <Modal
+          label={t('skills.historial-titulo', { name: historyOf.name })}
+          title={t('skills.historial-titulo', { name: historyOf.name })}
+          onClose={closeHistory}
         >
-          <h2 className="text-xl font-semibold text-white">
-            {t('skills.historial-titulo', { name: historyOf.name })}
-          </h2>
-
           {versionsLoading && <div className="text-gray-400">{t('skills.historial.cargando')}</div>}
           {versionsError && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
@@ -729,7 +801,8 @@ export default function SkillsPage() {
             </div>
           )}
 
-          {versions && versions.length === 0 && (
+          {/* M12: con error NO se muestra el texto de vacío. */}
+          {versions && versions.length === 0 && !versionsError && (
             <div className="text-gray-400">{t('skills.historial-vacia')}</div>
           )}
 
@@ -750,7 +823,8 @@ export default function SkillsPage() {
                         <span className="text-xs text-green-400">{t('skills.historial-vigente')}</span>
                       )}
                     </div>
-                    <span className="text-xs text-gray-500">{v.published_at}</span>
+                    {/* M10: la fecha con el formato del idioma activo, no la ISO cruda. */}
+                    <span className="text-xs text-gray-500">{dateFmt.format(new Date(v.published_at))}</span>
                   </div>
                   <div className="text-sm text-gray-300">
                     {t('skills.historial.notas')}: {v.changelog ?? '—'}
@@ -758,8 +832,8 @@ export default function SkillsPage() {
                   <div className="text-xs text-gray-400">
                     {t('skills.historial.tools')}:{' '}
                     {v.allowed_tools.length
-                      ? v.allowed_tools.join(', ')
-                      : t('skills.preview.sin-capacidades')}
+                      ? capabilityPhrases(t, v.allowed_tools).join(', ')
+                      : t('skills.tools.ninguna')}
                   </div>
                 </div>
               ))}
@@ -775,7 +849,7 @@ export default function SkillsPage() {
               {t('skills.cerrar')}
             </button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

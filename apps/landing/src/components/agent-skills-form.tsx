@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getAgent, patchAgentConfig, type AgentDetail } from '@/lib/agents';
 import {
   listSkillVersions,
@@ -9,7 +9,7 @@ import {
   type SkillVersionRecord,
 } from '@/lib/skills';
 import { selectableSkills, selectorTools } from '@/lib/skill-catalog';
-import { capabilitiesLabel } from '@/lib/skill-labels';
+import { capabilitiesLabel, capabilityPhrases } from '@/lib/skill-labels';
 import { skillErrorFrom } from '@/lib/skill-errors';
 import { useT } from '@/i18n/provider';
 
@@ -37,6 +37,9 @@ export default function AgentSkillsForm({
   const [catalog, setCatalog] = useState<SkillListItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [orgVersions, setOrgVersions] = useState<SkillVersionRecord[]>([]);
+  // M5: la carga de versiones tiene sus tres estados (cargando, error y cargado).
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [versionsError, setVersionsError] = useState<string | null>(null);
 
   const [skill, setSkill] = useState(agent.config.skillBinding?.skill ?? agent.defaultSkill ?? '');
   const [mode, setMode] = useState<'automatic' | 'pinned'>(
@@ -72,29 +75,55 @@ export default function AgentSkillsForm({
   const selected = visibleCatalog.find((s) => s.name === skill);
   const isOrg = selected?.kind === 'org';
 
-  // V8: con una skill de org, las versiones salen de `GET …/versions`.
+  // M4: el modo actual se guarda en un ref para leerlo dentro del callback de la carga de
+  // versiones sin reejecutarla cuando cambia.
+  const pinnedRef = useRef(false);
+  useEffect(() => {
+    pinnedRef.current = mode === 'pinned';
+  }, [mode]);
+
+  // V8/M5: con una skill de org, las versiones salen de `GET …/versions`, con sus tres
+  // estados (cargando, error y cargado). M6: al cambiar de skill, las versiones anteriores
+  // se vacían (handleSkillChange) y una respuesta atrasada de otra skill se descarta.
+  // Los cambios de estado van en un microtask, fuera del cuerpo síncrono del efecto.
   useEffect(() => {
     if (!isOrg || !skill) return;
     let cancelled = false;
-    listSkillVersions(skill)
-      .then((res) => {
-        if (!cancelled) setOrgVersions(res.versions);
-      })
-      .catch(() => {
-        if (!cancelled) setOrgVersions([]);
-      });
+    void (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      setOrgVersions([]);
+      setVersionsError(null);
+      setVersionsLoading(true);
+      try {
+        const res = await listSkillVersions(skill);
+        if (cancelled) return;
+        setOrgVersions(res.versions);
+        // M4: si se había elegido fijar y no hay versión, se elige la más nueva EN EL ESTADO
+        // (la API las da de la más nueva a la más vieja).
+        if (pinnedRef.current) {
+          setVersion((current) => current || (res.versions[0]?.version ?? ''));
+        }
+      } catch (err) {
+        if (!cancelled) setVersionsError(skillErrorFrom(t, err));
+      } finally {
+        if (!cancelled) setVersionsLoading(false);
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, [isOrg, skill]);
+  }, [isOrg, skill, t]);
 
+  const versionsLoaded = !versionsLoading && !versionsError;
   const versionOptions = useMemo(() => {
     const opts: Array<{ value: string; label: string }> = [];
     if (isOrg) {
       for (const v of orgVersions) {
         opts.push({ value: v.version, label: `${t('agents.skills.v')}${v.version}` });
       }
-      if (version && !opts.some((o) => o.value === version)) {
+      // M5: «Versión no disponible» SOLO con la carga terminada bien (no al cargar ni al fallar).
+      if (versionsLoaded && version && !opts.some((o) => o.value === version)) {
         opts.push({
           value: version,
           label: `${t('agents.skills.v')}${version} (${t('agents.skills.version-no-disponible')})`,
@@ -117,7 +146,7 @@ export default function AgentSkillsForm({
       }
     }
     return opts;
-  }, [isOrg, orgVersions, selected, version, t]);
+  }, [isOrg, orgVersions, selected, version, t, versionsLoaded]);
 
   const originalSkill = agent.config.skillBinding?.skill ?? agent.defaultSkill ?? '';
   const originalMode = agent.config.skillBinding?.version ? 'pinned' : 'automatic';
@@ -132,6 +161,9 @@ export default function AgentSkillsForm({
     // V8: al cambiar de skill vuelve a Automática.
     setMode('automatic');
     setVersion('');
+    // M6: las versiones anteriores se vacían al cambiar de skill.
+    setOrgVersions([]);
+    setVersionsError(null);
   }
 
   function handleModeChange(nextMode: 'automatic' | 'pinned') {
@@ -147,6 +179,11 @@ export default function AgentSkillsForm({
     setSaved(false);
     if (!skill) {
       setError(t('agents.skills.seleccionar'));
+      return;
+    }
+    // M4/E-2: con «Fijar versión» y sin una versión elegida, NO se guarda y se explica.
+    if (mode === 'pinned' && !version.trim()) {
+      setError(t('agents.skills.version-requerida'));
       return;
     }
     setSaving(true);
@@ -192,7 +229,7 @@ export default function AgentSkillsForm({
         <div className="text-sm text-gray-400 mb-1.5">{t("agents.skills.skill")}</div>
         <select className={inputCls} value={skill} onChange={(e) => handleSkillChange(e.target.value)}>
           <option value="">{t("agents.skills.seleccionar")}</option>
-          {!skillAvailable && skill && (
+          {!loadingCatalog && !skillAvailable && skill && (
             <option value={skill}>{`${skill} (${t('agents.skills.skill-no-disponible')})`}</option>
           )}
           {visibleCatalog.map((s) => {
@@ -258,6 +295,16 @@ export default function AgentSkillsForm({
         <div className="text-sm text-gray-500">{t("agents.skills.cargando-catalogo-de-skills")}</div>
       )}
 
+      {/* M5: la carga de las versiones de una skill de org, con sus tres estados. */}
+      {isOrg && versionsLoading && (
+        <div className="text-sm text-gray-500">{t("agents.skills.cargando-versiones")}</div>
+      )}
+      {isOrg && versionsError && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
+          {versionsError}
+        </div>
+      )}
+
       {selected && (
         <div className="bg-gray-950 border border-gray-800 rounded-lg p-4 space-y-3">
           <div className="text-sm text-gray-300">{selected.description}</div>
@@ -267,14 +314,19 @@ export default function AgentSkillsForm({
             ) : (
               <span>{t("skills.version")}: {selected.current_version ?? t("skills.sin-publicar")}</span>
             )}
-            <span>{selected.tools_count} {t("agents.skills.tools")}</span>
+            {/* M11: el número es el de las tools PUBLICADAS (selectorTools), no la copia de trabajo. */}
+            <span>{selectorTools(selected).length} {t("agents.skills.tools")}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {selectorTools(selected).map((tool) => (
-              <span key={tool} className="px-2 py-0.5 rounded-md bg-gray-800 text-gray-400 text-xs font-mono">
-                {tool}
-              </span>
-            ))}
+            {selectorTools(selected).length ? (
+              selectorTools(selected).map((tool) => (
+                <span key={tool} className="px-2 py-0.5 rounded-md bg-gray-800 text-gray-400 text-xs">
+                  {capabilityPhrases(t, [tool])[0]}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-gray-500">{t('skills.tools.ninguna')}</span>
+            )}
           </div>
         </div>
       )}

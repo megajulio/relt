@@ -66,6 +66,8 @@ export interface SkillDetail {
   latest_version: string;
   versions: SkillVersion[];
   display_name?: string;
+  /** El detalle de una skill de org trae `description` (el de RELT no). */
+  description?: string;
   allowed_tools?: string[];
   base_skill?: string;
   status?: SkillStatus;
