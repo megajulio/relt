@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 /**
  * T64-10 (Orden #64 · ANEXO-64-F · F-3) — lista de skills.
@@ -34,6 +34,9 @@ vi.mock('@/lib/skills', () => ({
 }));
 
 import SkillsPage from '@/app/dashboard/skills/page';
+import { getMessages } from '@/i18n/catalog';
+import { I18nProvider } from '@/i18n/provider';
+import type { Locale } from '@/i18n/types';
 import { orgSkill, publishPreview, repoSkill, skillDetail } from './t64-fixtures';
 import { renderWithI18n } from './render-with-i18n';
 
@@ -60,6 +63,20 @@ async function startEdit(name: string) {
   fireEvent.click(within(row(name)).getByText('Editar'));
   await waitFor(() =>
     expect((screen.getByLabelText(/Cómo hacer la tarea/) as HTMLTextAreaElement).value).not.toBe(''),
+  );
+}
+
+/**
+ * ANEXO-64-H · H-1 (P1) — el mismo árbol, con el idioma como única diferencia: el
+ * `I18nProvider` en la raíz permite `rerender` de `es` a `en` sin desmontar la página
+ * (que es lo que hace el selector de idioma con `router.refresh()`: conserva el
+ * formulario y cambia `t`).
+ */
+function arbol(locale: Locale) {
+  return (
+    <I18nProvider locale={locale} messages={getMessages(locale)}>
+      <SkillsPage />
+    </I18nProvider>
   );
 }
 
@@ -406,6 +423,105 @@ describe('T64-10 · lista de skills', () => {
     fireEvent.click(restaurar);
     await waitFor(() => expect(mocks.patchOrgSkill).toHaveBeenCalledTimes(1));
     expect(mocks.patchOrgSkill).toHaveBeenCalledTimes(1);
+  });
+
+  // ---------------------------------------------------------------------------
+  // ANEXO-64-H · H-1 · P1 — el selector de idioma hace `router.refresh()`, que conserva
+  // el formulario y cambia `t`; la carga de la lista vuelve a correr y NO puede tocar
+  // `base` ni `tools`. La primera skill de RELT del doble (`general`) tiene tools
+  // DISTINTAS de las de la skill editada y de las de la base elegida (`catalogo`), así
+  // que un reemplazo silencioso se ve en el `PATCH` (o en el alta).
+  // ---------------------------------------------------------------------------
+  const DOBLE_ES = [
+    repoSkill({ name: 'general', tools: ['products.search'] }),
+    repoSkill({ name: 'catalogo', latest_version: '1.0.0', tools_count: 2, tools: ['quotes.create', 'quotes.read'] }),
+    orgSkill({
+      name: 'activa',
+      display_name: 'Activa',
+      status: 'active',
+      current_version: '1.2.0',
+      has_unpublished_changes: false,
+      latest_version: '7',
+      allowed_tools: ['quotes.create', 'quotes.read'],
+    }),
+  ];
+  // La segunda carga trae una fila más: es la prueba de que la recarga YA se aplicó.
+  const DOBLE_EN = [
+    ...DOBLE_ES,
+    orgSkill({
+      name: 'recargada',
+      display_name: 'Recargada',
+      status: 'draft',
+      current_version: null,
+      published_tools: null,
+      latest_version: '1',
+    }),
+  ];
+
+  it('P1: cambiar de idioma mientras se edita no reemplaza las capacidades del detalle', async () => {
+    mocks.listSkillsWithTools.mockResolvedValueOnce(DOBLE_ES).mockResolvedValueOnce(DOBLE_EN);
+    mocks.getSkill.mockResolvedValueOnce(
+      skillDetail({
+        name: 'activa',
+        base_skill: 'catalogo',
+        allowed_tools: ['quotes.create', 'quotes.read'],
+        instructions: 'Pasos del detalle',
+      }),
+    );
+
+    const { rerender } = render(arbol('es'));
+    await waitFor(() => expect(screen.queryAllByText('De RELT').length).toBeGreaterThan(0));
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(1);
+
+    await startEdit('activa');
+    expect((screen.getByLabelText(/Cómo hacer la tarea/) as HTMLTextAreaElement).value).toBe(
+      'Pasos del detalle',
+    );
+
+    // El idioma cambia sin desmontar la página: el formulario se conserva.
+    rerender(arbol('en'));
+    await waitFor(() => expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2));
+    // …y la carga posterior llega y se aplica (la fila nueva), ya en inglés.
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-testid="skill-row"][data-name="recargada"]'),
+      ).not.toBeNull(),
+    );
+    expect(screen.queryByLabelText(/How to do the task/)).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(mocks.patchOrgSkill).toHaveBeenCalled());
+    const [name, patch] = mocks.patchOrgSkill.mock.calls[0];
+    expect(name).toBe('activa');
+    expect(patch.allowed_tools).toEqual(['quotes.create', 'quotes.read']);
+    expect(patch.instructions).toBe('Pasos del detalle');
+  });
+
+  it('P1: cambiar de idioma en «Nueva skill» conserva la base elegida y las capacidades', async () => {
+    mocks.listSkillsWithTools.mockResolvedValueOnce(DOBLE_ES).mockResolvedValueOnce(DOBLE_EN);
+
+    const { rerender } = render(arbol('es'));
+    await waitFor(() => expect(screen.queryAllByText('De RELT').length).toBeGreaterThan(0));
+
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'nueva-skill' } });
+    fireEvent.change(screen.getByLabelText('Skill base'), { target: { value: 'catalogo' } });
+    // una capacidad quitada a mano
+    fireEvent.click(screen.getByLabelText(/quotes\.create/));
+
+    rerender(arbol('en'));
+    await waitFor(() => expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-testid="skill-row"][data-name="recargada"]'),
+      ).not.toBeNull(),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(mocks.createOrgSkill).toHaveBeenCalled());
+    const [input] = mocks.createOrgSkill.mock.calls[0];
+    expect(input.name).toBe('nueva-skill');
+    expect(input.base_skill).toBe('catalogo');
+    expect(input.allowed_tools).toEqual(['quotes.read']);
   });
 });
 
