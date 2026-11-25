@@ -18,7 +18,7 @@ import {
   type SkillWithTools,
 } from '@/lib/skills';
 import { capabilityPhrases } from '@/lib/skill-labels';
-import { skillErrorFrom } from '@/lib/skill-errors';
+import { skillErrorFrom, skillLoadErrorFrom } from '@/lib/skill-errors';
 import { countChars, MAX_SKILL_INSTRUCTIONS } from '@/lib/count-chars';
 import { useLocale, useT } from '@/i18n/provider';
 
@@ -155,6 +155,8 @@ export default function SkillsPage() {
   }, [t]);
 
   function resetForm() {
+    // N4: cancelar invalida el pedido del detalle que esté en vuelo.
+    editRequest.current += 1;
     setEditing(null);
     setEditLoading(false);
     setEditError(null);
@@ -194,7 +196,8 @@ export default function SkillsPage() {
       setTools(detail.allowed_tools ?? []);
     } catch (err) {
       if (editRequest.current !== req) return;
-      setEditError(skillErrorFrom(t, err));
+      // N5: un fallo de CARGA usa el texto de carga.
+      setEditError(skillLoadErrorFrom(t, err));
     } finally {
       if (editRequest.current === req) setEditLoading(false);
     }
@@ -311,7 +314,8 @@ export default function SkillsPage() {
         setPreviewError(t('skills.preview.archivada'));
         await refresh();
       } else {
-        setPreviewError(skillErrorFrom(t, err));
+        // N5: un fallo de CARGA de la vista previa usa el texto de carga.
+        setPreviewError(skillLoadErrorFrom(t, err));
       }
       return false;
     } finally {
@@ -390,7 +394,8 @@ export default function SkillsPage() {
       setVersions(res.versions);
     } catch (err) {
       if (historyRequest.current !== req) return;
-      setVersionsError(skillErrorFrom(t, err));
+      // N5: un fallo de CARGA del historial usa el texto de carga.
+      setVersionsError(skillLoadErrorFrom(t, err));
       setVersions([]);
     } finally {
       if (historyRequest.current === req) setVersionsLoading(false);
@@ -411,6 +416,8 @@ export default function SkillsPage() {
   const listBusy = saving || publishing !== null;
   // M3: no se puede guardar mientras carga el detalle o si falló.
   const editBlocked = editing !== null && (editLoading || editError !== null);
+  // N4: mientras el detalle carga o falló, los campos están deshabilitados; «Cancelar» no.
+  const formDisabled = saving || editBlocked;
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -579,7 +586,7 @@ export default function SkillsPage() {
               className={inputCls}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={saving || editing !== null}
+              disabled={formDisabled || editing !== null}
               placeholder={t("skills.mi-skill")}
             />
             {editing && <p className="text-xs text-gray-500 mt-1">{t("skills.campo-no-editable")}</p>}
@@ -593,7 +600,7 @@ export default function SkillsPage() {
               className={inputCls}
               value={base}
               onChange={(e) => handleBaseChange(e.target.value)}
-              disabled={saving || editing !== null}
+              disabled={formDisabled || editing !== null}
             >
               {bases.map((b) => (
                 <option key={b.name} value={b.name}>
@@ -613,7 +620,7 @@ export default function SkillsPage() {
               className={inputCls}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              disabled={saving}
+              disabled={formDisabled}
             />
           </div>
           <div>
@@ -626,7 +633,7 @@ export default function SkillsPage() {
               className={inputCls}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              disabled={saving}
+              disabled={formDisabled}
             />
           </div>
         </div>
@@ -641,7 +648,7 @@ export default function SkillsPage() {
             className={inputCls}
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
-            disabled={saving}
+            disabled={formDisabled}
             aria-describedby="skill-instructions-help"
           />
           <p id="skill-instructions-help" className="text-xs text-gray-500 mt-1">
@@ -662,7 +669,7 @@ export default function SkillsPage() {
                   className="w-4 h-4 accent-blue-600"
                   checked={tools.includes(tool)}
                   onChange={() => toggleTool(tool)}
-                  disabled={saving}
+                  disabled={formDisabled}
                 />
                 <span className="font-mono text-xs text-gray-500">{tool}</span>
                 <span>{capabilityPhrases(t, [tool])[0]}</span>

@@ -39,7 +39,11 @@ const CODE_KEYS: Record<string, string> = {
 
 
 /** Texto en lenguaje claro para un error de skills (G-4.2), en el idioma activo. */
-export function skillErrorMessage(t: TFunction, info: SkillErrorInfo): string {
+export function skillErrorMessage(
+  t: TFunction,
+  info: SkillErrorInfo,
+  fallbackKey = 'errors.fallback',
+): string {
   if (info.code === 'field_too_long') {
     // ANEXO-64-F (F-2.8, M10): el error de longitud del `changelog` tiene su propio texto.
     if (info.field === 'changelog') return t('errors.changelog_too_long');
@@ -60,7 +64,7 @@ export function skillErrorMessage(t: TFunction, info: SkillErrorInfo): string {
   if (info.status === 403) {
     return t('errors.role_403');
   }
-  return t('errors.fallback');
+  return t(fallbackKey);
 }
 
 interface ErrorLike {
@@ -74,4 +78,18 @@ interface ErrorLike {
 export function skillErrorFrom(t: TFunction, err: unknown): string {
   const e = (err ?? {}) as ErrorLike;
   return skillErrorMessage(t, { code: e.code, status: e.status, field: e.field, agents: e.meta?.agents });
+}
+
+/**
+ * ANEXO-64-G (G-1.5, N5) — el texto por defecto de un fallo de **carga** (detalle, vista
+ * previa, historial, versiones y catálogo) es «No se pudo cargar. Intenta de nuevo.»
+ * Los códigos conocidos conservan su texto.
+ */
+export function skillLoadErrorFrom(t: TFunction, err: unknown): string {
+  const e = (err ?? {}) as ErrorLike;
+  return skillErrorMessage(
+    t,
+    { code: e.code, status: e.status, field: e.field, agents: e.meta?.agents },
+    'errors.cargar',
+  );
 }

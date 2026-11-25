@@ -599,6 +599,7 @@
   "errors.skill_in_use.other": "La usan {count} agentes.",
   "errors.role_403": "Tu rol no permite crear ni editar skills. Pídeselo a un administrador.",
   "errors.fallback": "No se pudo guardar. Intenta de nuevo.",
+  "errors.cargar": "No se pudo cargar. Intenta de nuevo.",
   "business.template": "Somos [nombre del negocio]. Vendemos [qué vendes].\nHorario de atención: [días y horas].\nTono: [cercano / formal].\nSi te preguntan algo que no sabes (precios, stock, envíos), no lo inventes: di que una persona del equipo responderá pronto.",
   "sandbox.qr.not-provisioned": "Tu sandbox aún no está aprovisionado. Crea tu primer Agente para aprovisionar tu sandbox de WhatsApp automáticamente.",
   "skills.state.draft": "Borrador",

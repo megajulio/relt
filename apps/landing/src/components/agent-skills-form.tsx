@@ -10,7 +10,7 @@ import {
 } from '@/lib/skills';
 import { selectableSkills, selectorTools } from '@/lib/skill-catalog';
 import { capabilitiesLabel, capabilityPhrases } from '@/lib/skill-labels';
-import { skillErrorFrom } from '@/lib/skill-errors';
+import { skillErrorFrom, skillLoadErrorFrom } from '@/lib/skill-errors';
 import { useT } from '@/i18n/provider';
 
 const inputCls =
@@ -25,6 +25,11 @@ const inputCls =
  *   skill vuelve a Automática;
  * - nada se cambia en silencio: si la skill actual o la versión fijada ya no están en
  *   la lista, se muestran marcadas como no disponibles y guardar no las reemplaza.
+ * Orden #64 · ANEXO-64-G (G-1, N1 a N3):
+ * - el catálogo tiene tres estados (cargando, error y cargado), y «No disponible» solo
+ *   sale con el catálogo cargado bien y, en una skill de org, con SUS versiones cargadas;
+ * - las versiones se guardan con el nombre de su skill y las de otra no se usan nunca;
+ * - mientras cargan o si fallan, la versión fijada se ve en la lista SIN marca.
  */
 export default function AgentSkillsForm({
   agent,
@@ -35,11 +40,18 @@ export default function AgentSkillsForm({
 }) {
   const t = useT();
   const [catalog, setCatalog] = useState<SkillListItem[]>([]);
-  const [loadingCatalog, setLoadingCatalog] = useState(true);
-  const [orgVersions, setOrgVersions] = useState<SkillVersionRecord[]>([]);
-  // M5: la carga de versiones tiene sus tres estados (cargando, error y cargado).
+  // N1: el catálogo tiene TRES estados: cargando, error y cargado.
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  // N2: las versiones se guardan CON el nombre de su skill; las de otra no se usan.
+  const [versions, setVersions] = useState<{ skill: string; items: SkillVersionRecord[] } | null>(
+    null,
+  );
+  // M5/N1: la carga de versiones tiene sus tres estados (cargando, error y cargado).
   const [versionsLoading, setVersionsLoading] = useState(false);
-  const [versionsError, setVersionsError] = useState<string | null>(null);
+  const [versionsError, setVersionsError] = useState<{ skill: string; message: string } | null>(
+    null,
+  );
 
   const [skill, setSkill] = useState(agent.config.skillBinding?.skill ?? agent.defaultSkill ?? '');
   const [mode, setMode] = useState<'automatic' | 'pinned'>(
@@ -51,11 +63,26 @@ export default function AgentSkillsForm({
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     listSkills()
-      .then(setCatalog)
-      .catch(() => setCatalog([]))
-      .finally(() => setLoadingCatalog(false));
-  }, []);
+      .then((items) => {
+        if (cancelled) return;
+        setCatalog(items);
+        setCatalogError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        // N1/N5: el error del catálogo no se silencia; su texto de carga es el genérico.
+        setCatalog([]);
+        setCatalogError(skillLoadErrorFrom(t, err));
+      })
+      .finally(() => {
+        if (!cancelled) setCatalogLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
 
   // V8: al cambiar de agente (id o `updatedAt`) se resincroniza el formulario. Se hace
   // durante el render (el patrón de React para estado derivado de props) y no en un
@@ -74,6 +101,19 @@ export default function AgentSkillsForm({
   const skillAvailable = visibleCatalog.some((s) => s.name === skill);
   const selected = visibleCatalog.find((s) => s.name === skill);
   const isOrg = selected?.kind === 'org';
+  // N1: el catálogo cargado BIEN (ni cargando ni con error).
+  const catalogLoaded = !catalogLoading && catalogError === null;
+  // N2: solo se usan las versiones de ESTA skill.
+  const versionsOfSkill = useMemo(
+    () => (versions?.skill === skill ? versions.items : []),
+    [versions, skill],
+  );
+  const versionsErrorOfSkill = versionsError?.skill === skill ? versionsError.message : null;
+  const versionsLoaded =
+    versions !== null &&
+    versions.skill === skill &&
+    !versionsLoading &&
+    versionsErrorOfSkill === null;
 
   // M4: el modo actual se guarda en un ref para leerlo dentro del callback de la carga de
   // versiones sin reejecutarla cuando cambia.
@@ -83,8 +123,8 @@ export default function AgentSkillsForm({
   }, [mode]);
 
   // V8/M5: con una skill de org, las versiones salen de `GET …/versions`, con sus tres
-  // estados (cargando, error y cargado). M6: al cambiar de skill, las versiones anteriores
-  // se vacían (handleSkillChange) y una respuesta atrasada de otra skill se descarta.
+  // estados (cargando, error y cargado). M6/N2: una respuesta atrasada de otra skill se
+  // descarta y, además, queda guardada con SU nombre, así que nunca se pinta en otra.
   // Los cambios de estado van en un microtask, fuera del cuerpo síncrono del efecto.
   useEffect(() => {
     if (!isOrg || !skill) return;
@@ -92,20 +132,22 @@ export default function AgentSkillsForm({
     void (async () => {
       await Promise.resolve();
       if (cancelled) return;
-      setOrgVersions([]);
-      setVersionsError(null);
       setVersionsLoading(true);
       try {
         const res = await listSkillVersions(skill);
         if (cancelled) return;
-        setOrgVersions(res.versions);
+        setVersions({ skill, items: res.versions });
+        setVersionsError(null);
         // M4: si se había elegido fijar y no hay versión, se elige la más nueva EN EL ESTADO
         // (la API las da de la más nueva a la más vieja).
         if (pinnedRef.current) {
           setVersion((current) => current || (res.versions[0]?.version ?? ''));
         }
       } catch (err) {
-        if (!cancelled) setVersionsError(skillErrorFrom(t, err));
+        if (cancelled) return;
+        setVersions(null);
+        // N5: un fallo de CARGA usa el texto de carga, no el de guardar.
+        setVersionsError({ skill, message: skillLoadErrorFrom(t, err) });
       } finally {
         if (!cancelled) setVersionsLoading(false);
       }
@@ -115,18 +157,30 @@ export default function AgentSkillsForm({
     };
   }, [isOrg, skill, t]);
 
-  const versionsLoaded = !versionsLoading && !versionsError;
+  // N1/M4: al llegar el catálogo, si se había elegido fijar y no hay versión, también una
+  // skill de RELT elige la más nueva EN EL ESTADO (no solo en la pantalla).
+  useEffect(() => {
+    if (!catalogLoaded || mode !== 'pinned' || version || isOrg || !selected) return;
+    void Promise.resolve().then(() => {
+      setVersion((current) => current || selected.latest_version);
+    });
+  }, [catalogLoaded, mode, version, isOrg, selected]);
+
   const versionOptions = useMemo(() => {
     const opts: Array<{ value: string; label: string }> = [];
     if (isOrg) {
-      for (const v of orgVersions) {
+      for (const v of versionsOfSkill) {
         opts.push({ value: v.version, label: `${t('agents.skills.v')}${v.version}` });
       }
-      // M5: «Versión no disponible» SOLO con la carga terminada bien (no al cargar ni al fallar).
-      if (versionsLoaded && version && !opts.some((o) => o.value === version)) {
+      if (version && !opts.some((o) => o.value === version)) {
+        // N1: «Versión no disponible» SOLO con el catálogo y SUS versiones cargadas bien.
+        // N3: mientras cargan o si fallan, la versión fijada se ve SIN marca.
+        const marcada = versionsLoaded && catalogLoaded;
         opts.push({
           value: version,
-          label: `${t('agents.skills.v')}${version} (${t('agents.skills.version-no-disponible')})`,
+          label: marcada
+            ? `${t('agents.skills.v')}${version} (${t('agents.skills.version-no-disponible')})`
+            : `${t('agents.skills.v')}${version}`,
         });
       }
     } else {
@@ -137,16 +191,18 @@ export default function AgentSkillsForm({
         });
       }
       if (version && version !== selected?.latest_version) {
+        // N1/N3: sin catálogo cargado bien no se marca como no disponible.
+        const marcada = catalogLoaded && !selected;
         opts.push({
           value: version,
-          label: selected
-            ? `${t('agents.skills.v')}${version}`
-            : `${t('agents.skills.v')}${version} (${t('agents.skills.version-no-disponible')})`,
+          label: marcada
+            ? `${t('agents.skills.v')}${version} (${t('agents.skills.version-no-disponible')})`
+            : `${t('agents.skills.v')}${version}`,
         });
       }
     }
     return opts;
-  }, [isOrg, orgVersions, selected, version, t, versionsLoaded]);
+  }, [isOrg, versionsOfSkill, catalogLoaded, selected, version, t, versionsLoaded]);
 
   const originalSkill = agent.config.skillBinding?.skill ?? agent.defaultSkill ?? '';
   const originalMode = agent.config.skillBinding?.version ? 'pinned' : 'automatic';
@@ -162,14 +218,14 @@ export default function AgentSkillsForm({
     setMode('automatic');
     setVersion('');
     // M6: las versiones anteriores se vacían al cambiar de skill.
-    setOrgVersions([]);
+    setVersions(null);
     setVersionsError(null);
   }
 
   function handleModeChange(nextMode: 'automatic' | 'pinned') {
     setMode(nextMode);
     if (nextMode === 'pinned' && !version) {
-      if (isOrg) setVersion(orgVersions[0]?.version ?? '');
+      if (isOrg) setVersion(versionsOfSkill[0]?.version ?? '');
       else if (selected) setVersion(selected.latest_version);
     }
   }
@@ -229,7 +285,7 @@ export default function AgentSkillsForm({
         <div className="text-sm text-gray-400 mb-1.5">{t("agents.skills.skill")}</div>
         <select className={inputCls} value={skill} onChange={(e) => handleSkillChange(e.target.value)}>
           <option value="">{t("agents.skills.seleccionar")}</option>
-          {!loadingCatalog && !skillAvailable && skill && (
+          {catalogLoaded && !skillAvailable && skill && (
             <option value={skill}>{`${skill} (${t('agents.skills.skill-no-disponible')})`}</option>
           )}
           {visibleCatalog.map((s) => {
@@ -291,17 +347,23 @@ export default function AgentSkillsForm({
         </div>
       </div>
 
-      {loadingCatalog && (
+      {catalogLoading && (
         <div className="text-sm text-gray-500">{t("agents.skills.cargando-catalogo-de-skills")}</div>
+      )}
+      {/* N1/N5: el error del catálogo se muestra, con el texto de carga. */}
+      {catalogError && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
+          {catalogError}
+        </div>
       )}
 
       {/* M5: la carga de las versiones de una skill de org, con sus tres estados. */}
       {isOrg && versionsLoading && (
         <div className="text-sm text-gray-500">{t("agents.skills.cargando-versiones")}</div>
       )}
-      {isOrg && versionsError && (
+      {isOrg && versionsErrorOfSkill && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
-          {versionsError}
+          {versionsErrorOfSkill}
         </div>
       )}
 

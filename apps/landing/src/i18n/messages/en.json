@@ -599,6 +599,7 @@
   "errors.skill_in_use.other": "Used by {count} agents.",
   "errors.role_403": "Your role cannot create or edit skills. Ask an administrator.",
   "errors.fallback": "Could not save. Try again.",
+  "errors.cargar": "Could not load. Try again.",
   "business.template": "We are [business name]. We sell [what you sell].\nOpening hours: [days and hours].\nTone: [friendly / formal].\nIf you are asked something you do not know (prices, stock, shipping), do not make it up: say that a team member will reply soon.",
   "sandbox.qr.not-provisioned": "Your sandbox is not provisioned yet. Create your first Agent to automatically provision your WhatsApp sandbox.",
   "skills.state.draft": "Draft",
