@@ -74,7 +74,12 @@ describe('T64-12 · historial', () => {
     mocks.createOrgSkill.mockResolvedValue(skillDetail({ name: 'nueva' }));
     mocks.getSkill.mockResolvedValue(skillDetail({ name: 'tienda' }));
     mocks.getPublishPreview.mockResolvedValue(publishPreview());
-    mocks.publishOrgSkill.mockResolvedValue(skillDetail({ name: 'tienda' }));
+    mocks.publishOrgSkill.mockResolvedValue({
+      ...skillDetail({ name: 'tienda' }),
+      published_version: '1.0.0',
+      bump: 'initial',
+      changelog: null,
+    });
     mocks.listSkillVersions.mockResolvedValue({ versions: VERSIONS, total: VERSIONS.length });
   });
   afterEach(() => {
@@ -157,8 +162,9 @@ describe('T64-12 · historial', () => {
     fireEvent.click(within(row('tienda')).getByText('Historial'));
     await screen.findByRole('dialog');
     await waitFor(() =>
-      expect(screen.queryByText('No se pudo guardar. Intenta de nuevo.')).not.toBeNull(),
+      expect(screen.queryByText('No se pudo cargar. Intenta de nuevo.')).not.toBeNull(),
     );
+    expect(screen.queryByText('No se pudo guardar. Intenta de nuevo.')).toBeNull();
     expect(screen.queryByText('Esta skill todavía no tiene versiones.')).toBeNull();
   });
 

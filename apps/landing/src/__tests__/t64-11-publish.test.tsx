@@ -187,10 +187,20 @@ describe('T64-11 · publicar', () => {
     mocks.getPublishPreview.mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 500 }));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Publicar' }));
     await waitFor(() => expect(mocks.getPublishPreview).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(within(dialog).getByText('No se pudo guardar. Intenta de nuevo.')).not.toBeNull());
+    await waitFor(() => expect(within(dialog).getByText('No se pudo cargar. Intenta de nuevo.')).not.toBeNull());
     expect(
       within(dialog).queryByText('Alguien publicó otra versión mientras mirabas. Revisa la vista previa otra vez.'),
     ).toBeNull();
+  });
+
+  it('N5: un fallo al cargar la vista previa dice «No se pudo cargar» (no «guardar»)', async () => {
+    mocks.getPublishPreview.mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 500 }));
+    fireEvent.click(within(row('tienda')).getByText('Publicar'));
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() =>
+      expect(within(dialog).getByText('No se pudo cargar. Intenta de nuevo.')).not.toBeNull(),
+    );
+    expect(within(dialog).queryByText('No se pudo guardar. Intenta de nuevo.')).toBeNull();
   });
 
   it('409 nothing_to_publish al abrir: lo explica y refresca la lista', async () => {

@@ -70,7 +70,13 @@ describe('T64-10 · lista de skills', () => {
     mocks.createOrgSkill.mockResolvedValue(skillDetail({ name: 'nueva' }));
     mocks.getSkill.mockResolvedValue(skillDetail({ name: 'activa', instructions: 'Pasos de la tienda' }));
     mocks.getPublishPreview.mockResolvedValue(publishPreview());
-    mocks.publishOrgSkill.mockResolvedValue(skillDetail({ name: 'activa' }));
+    // N6: el doble de publicar lleva la forma exacta del contrato.
+    mocks.publishOrgSkill.mockResolvedValue({
+      ...skillDetail({ name: 'activa' }),
+      published_version: '1.3.0',
+      bump: 'minor',
+      changelog: null,
+    });
     mocks.listSkillVersions.mockResolvedValue({ versions: [], total: 0 });
   });
   afterEach(() => {
@@ -217,6 +223,76 @@ describe('T64-10 · lista de skills', () => {
     expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(1);
     fireEvent.click(within(row('activa-sin')).getByText('Archivar'));
     await waitFor(() => expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2));
+  });
+
+  it('N6: crear, editar, archivar y restaurar refrescan y avisan (2 pedidos exactos)', async () => {
+    // crear
+    await renderPage();
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'nueva-skill' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await waitFor(() =>
+      expect(screen.queryByText('Skill creada en borrador. Publícala para poder usarla.')).not.toBeNull(),
+    );
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2);
+    cleanup();
+    mocks.listSkillsWithTools.mockClear();
+
+    // editar
+    await renderPage();
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(1);
+    await startEdit('activa');
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await waitFor(() =>
+      expect(screen.queryByText('Skill actualizada. El cambio no se usa hasta publicarla.')).not.toBeNull(),
+    );
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2);
+    cleanup();
+    mocks.listSkillsWithTools.mockClear();
+
+    // archivar
+    await renderPage();
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(row('activa-sin')).getByText('Archivar'));
+    await waitFor(() => expect(screen.queryByText('Skill archivada.')).not.toBeNull());
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2);
+    cleanup();
+    mocks.listSkillsWithTools.mockClear();
+
+    // restaurar
+    await renderPage();
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(row('archivada')).getByText('Restaurar'));
+    await waitFor(() => expect(screen.queryByText('Skill restaurada y activa.')).not.toBeNull());
+    expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2);
+  });
+
+  it('N4: cancelar mientras carga el detalle invalida el pedido y no llena «Nueva skill»', async () => {
+    await renderPage();
+    let resolveDetail!: (v: unknown) => void;
+    mocks.getSkill.mockImplementationOnce(() => new Promise((res) => { resolveDetail = res; }));
+    fireEvent.click(within(row('activa')).getByText('Editar'));
+    // N4: mientras carga, los campos están deshabilitados y «Cancelar» no.
+    expect((screen.getByLabelText(/Cómo hacer la tarea/) as HTMLTextAreaElement).disabled).toBe(true);
+    const cancelar = screen.getByRole('button', { name: 'Cancelar' }) as HTMLButtonElement;
+    expect(cancelar.disabled).toBe(false);
+    fireEvent.click(cancelar);
+    // llega el detalle atrasado: se descarta y el formulario sigue siendo el de alta.
+    resolveDetail(skillDetail({ name: 'activa', instructions: 'Pasos de la tienda' }));
+    await waitFor(() => expect(screen.queryByText('Nueva skill')).not.toBeNull());
+    await new Promise((res) => setTimeout(res, 10));
+    expect((screen.getByLabelText(/Cómo hacer la tarea/) as HTMLTextAreaElement).value).toBe('');
+    expect((screen.getByLabelText('Nombre') as HTMLInputElement).value).toBe('');
+  });
+
+  it('N5: un fallo al cargar el detalle dice «No se pudo cargar» (no «guardar»)', async () => {
+    await renderPage();
+    mocks.getSkill.mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 500 }));
+    fireEvent.click(within(row('activa')).getByText('Editar'));
+    await waitFor(() => expect(screen.queryByText('No se pudo cargar. Intenta de nuevo.')).not.toBeNull());
+    expect(screen.queryByText('No se pudo guardar. Intenta de nuevo.')).toBeNull();
+    expect((screen.getByLabelText(/Cómo hacer la tarea/) as HTMLTextAreaElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Cancelar' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('M7: si el refresco falla, el aviso de éxito se conserva y se muestra el error de carga', async () => {

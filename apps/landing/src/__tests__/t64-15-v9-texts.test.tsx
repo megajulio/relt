@@ -14,8 +14,16 @@ const SKILL_HELP_EN =
   'Steps and criteria for this skill. Anything about your business (tone, hours, policies) goes in Business instructions.';
 
 const SKILLS = [
-  { name: 'general', latest_version: '1.0.0', description: 'General', tools_count: 1, permissions: ['products:read'], triggers: [], kind: 'repo', tools: ['products.search'] },
-  { name: 'tienda', latest_version: '1', description: 'Tienda', tools_count: 1, permissions: ['products:read'], triggers: [], kind: 'org', display_name: 'Tienda', base_skill: 'general', allowed_tools: ['products.search'], tools: ['products.search'], status: 'draft', current_version: null, has_unpublished_changes: true, published_tools: null },
+  repoSkill(),
+  orgSkill({
+    name: 'tienda',
+    display_name: 'Tienda',
+    status: 'draft',
+    current_version: null,
+    has_unpublished_changes: true,
+    published_tools: null,
+    latest_version: '1',
+  }),
 ];
 
 vi.mock('@/components/dashboard/DashboardAuthProvider', () => ({ useDashboardAuth: () => ({}) }));
@@ -36,6 +44,7 @@ vi.mock('@/lib/skills', () => ({
 
 import SkillsPage from '@/app/dashboard/skills/page';
 import AgentConfigForm from '@/components/agent-config-form';
+import { orgSkill, repoSkill } from './t64-fixtures';
 import { renderWithI18n } from './render-with-i18n';
 import type { Locale } from '@/i18n/types';
 

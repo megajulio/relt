@@ -11,20 +11,22 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
  * RELT, fijada y automática, como hoy.
  */
 
-const GENERAL = {
-  name: 'general', latest_version: '1.0.0', description: 'General', tools_count: 1,
-  permissions: ['products:read'], triggers: [], kind: 'repo' as const, tools: ['products.search'],
-};
-const TIENDA = {
-  name: 'tienda', latest_version: '3', description: 'Tienda', tools_count: 1,
-  permissions: ['products:read'], triggers: [], kind: 'org' as const, display_name: 'Tienda',
-  base_skill: 'general', allowed_tools: ['products.search'], tools: ['products.search'],
-  status: 'active' as const, current_version: '2.0.0', has_unpublished_changes: false,
+const GENERAL = repoSkill();
+const TIENDA = orgSkill({
+  name: 'tienda',
+  display_name: 'Tienda',
+  current_version: '2.0.0',
+  has_unpublished_changes: false,
+  allowed_tools: ['products.search'],
   published_tools: ['products.search'],
-};
-const OTRA = {
-  ...TIENDA, name: 'otra', display_name: 'Otra', current_version: '9.0.0',
-};
+  latest_version: '3',
+});
+const OTRA = orgSkill({
+  ...TIENDA,
+  name: 'otra',
+  display_name: 'Otra',
+  current_version: '9.0.0',
+});
 
 const mocks = vi.hoisted(() => ({
   listSkills: vi.fn(),
@@ -55,6 +57,7 @@ vi.mock('@/lib/skills', async (importActual) => {
 });
 
 import AgentSkillsForm from '@/components/agent-skills-form';
+import { orgSkill, repoSkill, versionRecord } from './t64-fixtures';
 import { renderWithI18n } from './render-with-i18n';
 
 function agent(binding: { skill: string; version?: string } | undefined) {
@@ -87,8 +90,8 @@ describe('T64-13 · fijar una versión', () => {
     mocks.listSkills.mockResolvedValue([GENERAL, TIENDA, OTRA]);
     mocks.listSkillVersions.mockResolvedValue({
       versions: [
-        { version: '2.0.0', bump: 'major', display_name: 'T', description: '', instructions: '', allowed_tools: ['products.search'], base_skill: 'general', changelog: null, published_at: '2026-02-01T00:00:00Z', published_by: null },
-        { version: '1.0.0', bump: 'initial', display_name: 'T', description: '', instructions: '', allowed_tools: ['products.search'], base_skill: 'general', changelog: null, published_at: '2026-01-01T00:00:00Z', published_by: null },
+        versionRecord({ version: '2.0.0', bump: 'major', published_at: '2026-02-01T00:00:00Z' }),
+        versionRecord({ version: '1.0.0', bump: 'initial', published_at: '2026-01-01T00:00:00Z' }),
       ],
       total: 2,
     });
@@ -183,8 +186,8 @@ describe('T64-13 · fijar una versión', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Fijar versión/ }));
     resolveVersions({
       versions: [
-        { version: '3.1.0', bump: 'minor', display_name: 'T', description: '', instructions: '', allowed_tools: ['products.search'], base_skill: 'general', changelog: null, published_at: '2026-03-01T00:00:00Z', published_by: null },
-        { version: '2.0.0', bump: 'major', display_name: 'T', description: '', instructions: '', allowed_tools: ['products.search'], base_skill: 'general', changelog: null, published_at: '2026-02-01T00:00:00Z', published_by: null },
+        versionRecord({ version: '3.1.0', bump: 'minor', published_at: '2026-03-01T00:00:00Z' }),
+        versionRecord({ version: '2.0.0', bump: 'major', published_at: '2026-02-01T00:00:00Z' }),
       ],
       total: 2,
     });
@@ -210,7 +213,8 @@ describe('T64-13 · fijar una versión', () => {
     mocks.listSkillVersions.mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 500 }));
     renderForm({ skill: 'tienda', version: '0.9.0' });
     await waitFor(() => expect(screen.queryAllByRole('option', { name: /tienda/ }).length).toBeGreaterThan(0));
-    await waitFor(() => expect(screen.queryByText('No se pudo guardar. Intenta de nuevo.')).not.toBeNull());
+    // N5: un fallo de CARGA usa el texto de carga.
+    await waitFor(() => expect(screen.queryByText('No se pudo cargar. Intenta de nuevo.')).not.toBeNull());
     expect(
       Array.from(versionSelect().options).some((o) => /Versión no disponible/.test(o.textContent ?? '')),
     ).toBe(false);
@@ -220,7 +224,7 @@ describe('T64-13 · fijar una versión', () => {
     await renderOrgForm({ skill: 'tienda', version: '1.0.0' });
     mocks.listSkillVersions.mockResolvedValueOnce({
       versions: [
-        { version: '9.0.0', bump: 'major', display_name: 'O', description: '', instructions: '', allowed_tools: ['products.search'], base_skill: 'general', changelog: null, published_at: '2026-04-01T00:00:00Z', published_by: null },
+        versionRecord({ version: '9.0.0', bump: 'major', published_at: '2026-04-01T00:00:00Z' }),
       ],
       total: 1,
     });
@@ -247,6 +251,129 @@ describe('T64-13 · fijar una versión', () => {
     fireEvent.click(saveButton());
     await waitFor(() => expect(mocks.patchAgentConfig).toHaveBeenCalled());
     expect(mocks.patchAgentConfig.mock.calls[0][1]).toEqual({ skillBinding: { skill: 'general' } });
+  });
+
+  it('N1: con el catálogo cargando, ni la skill ni la versión dicen «no disponible»', async () => {
+    mocks.listSkills.mockImplementation(() => new Promise(() => {}));
+    renderForm({ skill: 'tienda', version: '0.9.0' });
+    await waitFor(() => expect(screen.queryByText('Cargando catálogo de skills...')).not.toBeNull());
+    expect(versionSelect().value).toBe('0.9.0');
+    expect(versionOptionValues()).toContain('0.9.0');
+    expect(document.body.textContent).not.toContain('Versión no disponible');
+    expect(document.body.textContent).not.toContain('Skill no disponible');
+  });
+
+  it('N1: con el catálogo fallando (skill de org fijada), se muestra el error y no «no disponible»', async () => {
+    mocks.listSkills.mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 500 }));
+    renderForm({ skill: 'tienda', version: '0.9.0' });
+    await waitFor(() =>
+      expect(screen.queryByText('No se pudo cargar. Intenta de nuevo.')).not.toBeNull(),
+    );
+    expect(versionSelect().value).toBe('0.9.0');
+    expect(versionOptionValues()).toContain('0.9.0');
+    expect(document.body.textContent).not.toContain('Versión no disponible');
+    expect(document.body.textContent).not.toContain('Skill no disponible');
+  });
+
+  it('N1: con el catálogo fallando (skill de RELT fijada), se muestra el error y no «no disponible»', async () => {
+    mocks.listSkills.mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 500 }));
+    renderForm({ skill: 'general', version: '0.9.0' });
+    await waitFor(() =>
+      expect(screen.queryByText('No se pudo cargar. Intenta de nuevo.')).not.toBeNull(),
+    );
+    expect(versionSelect().value).toBe('0.9.0');
+    expect(versionOptionValues()).toContain('0.9.0');
+    expect(document.body.textContent).not.toContain('Versión no disponible');
+    expect(document.body.textContent).not.toContain('Skill no disponible');
+  });
+
+
+
+  it('N2: ningún render con el catálogo ya cargado dice «Versión no disponible» mientras llegan las versiones', async () => {
+    let resolveVersions!: (v: unknown) => void;
+    mocks.listSkillVersions.mockImplementationOnce(
+      () => new Promise((res) => { resolveVersions = res; }),
+    );
+    const textos: string[] = [];
+    const observer = new MutationObserver(() => {
+      textos.push(document.body.textContent ?? '');
+    });
+    renderForm({ skill: 'tienda', version: '0.9.0' });
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+    await waitFor(() =>
+      expect(screen.queryAllByRole('option', { name: /tienda/ }).length).toBeGreaterThan(0),
+    );
+    await waitFor(() => expect(screen.queryByText('Cargando versiones...')).not.toBeNull());
+    expect(textos.length).toBeGreaterThan(0);
+    expect(textos.every((texto) => !texto.includes('Versión no disponible'))).toBe(true);
+    expect(document.body.textContent).not.toContain('Versión no disponible');
+    resolveVersions({ versions: [versionRecord({ version: '2.0.0' })], total: 1 });
+    await waitFor(() => expect(versionOptionValues()).toContain('2.0.0'));
+    observer.disconnect();
+  });
+
+  it('N3: mientras cargan las versiones, la versión fijada se ve y sin marca', async () => {
+    mocks.listSkillVersions.mockImplementation(() => new Promise(() => {}));
+    renderForm({ skill: 'tienda', version: '0.9.0' });
+    await waitFor(() =>
+      expect(screen.queryAllByRole('option', { name: /tienda/ }).length).toBeGreaterThan(0),
+    );
+    await waitFor(() => expect(screen.queryByText('Cargando versiones...')).not.toBeNull());
+    expect(versionSelect().value).toBe('0.9.0');
+    expect(versionOptionValues()).toContain('0.9.0');
+    const opcion = Array.from(versionSelect().options).find((o) => o.value === '0.9.0')!;
+    expect(opcion.textContent).not.toContain('Versión no disponible');
+  });
+
+  it('N3: si fallan las versiones, la versión fijada se ve y sin marca', async () => {
+    mocks.listSkillVersions.mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 500 }));
+    renderForm({ skill: 'tienda', version: '0.9.0' });
+    await waitFor(() =>
+      expect(screen.queryByText('No se pudo cargar. Intenta de nuevo.')).not.toBeNull(),
+    );
+    expect(versionSelect().value).toBe('0.9.0');
+    expect(versionOptionValues()).toContain('0.9.0');
+    const opcion = Array.from(versionSelect().options).find((o) => o.value === '0.9.0')!;
+    expect(opcion.textContent).not.toContain('Versión no disponible');
+  });
+
+
+  it('N3: con Restablecer, la versión fijada de la skill original sigue visible y sin marca', async () => {
+    await renderOrgForm({ skill: 'tienda', version: '1.0.0' });
+    fireEvent.change(skillSelect(), { target: { value: 'otra' } });
+    await waitFor(() => expect(mocks.listSkillVersions).toHaveBeenCalledTimes(2));
+    // Al volver, las versiones de la skill original tardan: la fijada se ve SIN marca.
+    mocks.listSkillVersions.mockImplementationOnce(() => new Promise(() => {}));
+    fireEvent.click(screen.getByRole('button', { name: 'Restablecer' }));
+    await waitFor(() => expect(skillSelect().value).toBe('tienda'));
+    expect((screen.getByRole('radio', { name: /Fijar versión/ }) as HTMLInputElement).checked).toBe(true);
+    await waitFor(() => expect(versionOptionValues()).toContain('1.0.0'));
+    const opcion = Array.from(versionSelect().options).find((o) => o.value === '1.0.0')!;
+    expect(opcion.textContent).not.toContain('Versión no disponible');
+  });
+
+  it('N6: una respuesta atrasada de versiones de otra skill de org se descarta', async () => {
+    let resolveTienda!: (v: unknown) => void;
+    mocks.listSkillVersions.mockImplementationOnce(
+      () => new Promise((res) => { resolveTienda = res; }),
+    );
+    mocks.listSkillVersions.mockImplementationOnce(() =>
+      Promise.resolve({ versions: [versionRecord({ version: '9.0.0' })], total: 1 }),
+    );
+    renderForm({ skill: 'tienda' });
+    await waitFor(() =>
+      expect(screen.queryAllByRole('option', { name: /tienda/ }).length).toBeGreaterThan(0),
+    );
+    await waitFor(() => expect(mocks.listSkillVersions).toHaveBeenCalledTimes(1));
+    fireEvent.change(skillSelect(), { target: { value: 'otra' } });
+    await waitFor(() => expect(versionOptionValues()).toContain('9.0.0'));
+
+    // llega la respuesta atrasada de 'tienda': se descarta.
+    resolveTienda({ versions: [versionRecord({ version: '1.0.0' })], total: 1 });
+    await new Promise((res) => setTimeout(res, 10));
+    expect(versionOptionValues()).toContain('9.0.0');
+    expect(versionOptionValues()).not.toContain('1.0.0');
+    expect(versionSelect().value).not.toBe('1.0.0');
   });
 });
 

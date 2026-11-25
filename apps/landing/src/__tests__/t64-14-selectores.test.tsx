@@ -7,30 +7,40 @@ import { cleanup, screen, waitFor } from '@testing-library/react';
  * copia de trabajo; la skill actual no disponible se conserva.
  */
 
-const REPO = {
-  name: 'general', latest_version: '1.0.0', description: 'General', tools_count: 1,
-  permissions: ['products:read'], triggers: [], kind: 'repo', tools: ['products.search'],
-};
-const ACTIVA = {
-  name: 'activa', latest_version: '3', description: 'Activa', tools_count: 2,
-  permissions: ['products:read'], triggers: [], kind: 'org', display_name: 'Activa',
-  base_skill: 'general', allowed_tools: ['products.search', 'quotes.create'],
-  tools: ['products.search', 'quotes.create'], status: 'active', current_version: '1.0.0',
-  has_unpublished_changes: true, published_tools: ['products.search'],
-};
-const BORRADOR = {
-  name: 'borrador', latest_version: '1', description: 'Borrador', tools_count: 1,
-  permissions: ['products:read'], triggers: [], kind: 'org', display_name: 'Borrador',
-  base_skill: 'general', allowed_tools: ['products.search'], tools: ['products.search'],
-  status: 'draft', current_version: null, has_unpublished_changes: true, published_tools: null,
-};
-const ARCHIVADA = {
-  name: 'archivada', latest_version: '9', description: 'Archivada', tools_count: 1,
-  permissions: ['products:read'], triggers: [], kind: 'org', display_name: 'Archivada',
-  base_skill: 'general', allowed_tools: ['products.search'], tools: ['products.search'],
-  status: 'archived', current_version: '1.0.0', has_unpublished_changes: false,
+const REPO = repoSkill();
+const ACTIVA = orgSkill({
+  name: 'activa',
+  display_name: 'Activa',
+  description: 'Activa',
+  allowed_tools: ['products.search', 'quotes.create'],
   published_tools: ['products.search'],
-};
+  status: 'active',
+  current_version: '1.0.0',
+  has_unpublished_changes: true,
+  latest_version: '3',
+});
+const BORRADOR = orgSkill({
+  name: 'borrador',
+  display_name: 'Borrador',
+  description: 'Borrador',
+  allowed_tools: ['products.search'],
+  published_tools: null,
+  status: 'draft',
+  current_version: null,
+  has_unpublished_changes: true,
+  latest_version: '1',
+});
+const ARCHIVADA = orgSkill({
+  name: 'archivada',
+  display_name: 'Archivada',
+  description: 'Archivada',
+  allowed_tools: ['products.search'],
+  published_tools: ['products.search'],
+  status: 'archived',
+  current_version: '1.0.0',
+  has_unpublished_changes: false,
+  latest_version: '9',
+});
 
 const mocks = vi.hoisted(() => ({ listSkills: vi.fn(), listSkillVersions: vi.fn(), getAgent: vi.fn() }));
 
@@ -56,6 +66,7 @@ vi.mock('@/lib/skills', async (importActual) => {
 
 import CreateAgentPage from '@/app/dashboard/agents/new/page';
 import AgentSkillsForm from '@/components/agent-skills-form';
+import { orgSkill, repoSkill } from './t64-fixtures';
 import { renderWithI18n } from './render-with-i18n';
 
 const CATALOG = [REPO, ACTIVA, BORRADOR, ARCHIVADA];
