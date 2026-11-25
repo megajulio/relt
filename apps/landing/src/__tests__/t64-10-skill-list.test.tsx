@@ -230,6 +230,15 @@ describe('T64-10 · lista de skills', () => {
     expect(screen.queryByText('No se pudo guardar. Intenta de nuevo.')).toBeNull();
   });
 
+  it('M12: mientras se publica, las acciones de la lista quedan deshabilitadas', async () => {
+    await renderPage();
+    fireEvent.click(within(row('activa')).getByText('Publicar'));
+    await screen.findByRole('dialog');
+    expect((within(row('activa-sin')).getByText('Archivar') as HTMLButtonElement).disabled).toBe(true);
+    expect((within(row('archivada')).getByText('Restaurar') as HTMLButtonElement).disabled).toBe(true);
+    expect((within(row('borrador')).getByText('Editar') as HTMLButtonElement).disabled).toBe(true);
+  });
+
 
   it('un 4xx al archivar no da aviso de éxito', async () => {
     await renderPage();
