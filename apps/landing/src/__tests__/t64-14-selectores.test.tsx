@@ -126,4 +126,13 @@ describe('T64-14 · los dos selectores', () => {
     expect(option).not.toBeUndefined();
     expect(option!.textContent).toContain('Skill no disponible');
   });
+
+  it('M11: en la pestaña, el número de tools es el de las PUBLICADAS (published_tools)', async () => {
+    const select = await renderTab('activa');
+    expect(select.value).toBe('activa');
+    // La copia de trabajo tiene 2 tools, pero la publicada solo 1.
+    expect(screen.getByText(/herramientas/).textContent).toBe('1 herramientas');
+    expect(screen.getAllByText('Consulta productos').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Crea cotizaciones')).toBeNull();
+  });
 });
