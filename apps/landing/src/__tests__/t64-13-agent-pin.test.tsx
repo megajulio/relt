@@ -375,5 +375,32 @@ describe('T64-13 · fijar una versión', () => {
     expect(versionOptionValues()).not.toContain('1.0.0');
     expect(versionSelect().value).not.toBe('1.0.0');
   });
-});
 
+  it('N1: al llegar el catálogo con «Fijar versión» ya elegido, una skill de RELT elige la más nueva EN EL ESTADO', async () => {
+    let resolveCatalog!: (v: unknown) => void;
+    mocks.listSkills.mockImplementationOnce(
+      () => new Promise((res) => { resolveCatalog = res; }),
+    );
+    renderForm({ skill: 'general' });
+    await waitFor(() => expect(screen.queryByText('Cargando catálogo de skills...')).not.toBeNull());
+    fireEvent.click(screen.getByRole('radio', { name: /Fijar versión/ }));
+    // M4: sin versión todavía no se guarda.
+    fireEvent.click(saveButton());
+    await waitFor(() =>
+      expect(screen.queryByText('Elige una versión para fijarla, o usa Automática.')).not.toBeNull(),
+    );
+    expect(mocks.patchAgentConfig).not.toHaveBeenCalled();
+    // llega el catálogo: la versión se elige EN EL ESTADO, no solo en la pantalla.
+    resolveCatalog([GENERAL, TIENDA, OTRA]);
+    await waitFor(() => expect(versionOptionValues()).toContain('1.0.0'));
+    // el ESTADO ya tiene la versión elegida (no solo la pantalla).
+    expect(versionSelect().value).toBe('1.0.0');
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(mocks.patchAgentConfig).toHaveBeenCalled());
+    expect(mocks.patchAgentConfig.mock.calls[0][1]).toEqual({
+      skillBinding: { skill: 'general', version: '1.0.0' },
+    });
+  });
+
+
+});
