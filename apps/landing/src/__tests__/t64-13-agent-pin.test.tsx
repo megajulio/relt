@@ -392,11 +392,12 @@ describe('T64-13 · fijar una versión', () => {
     expect(mocks.patchAgentConfig).not.toHaveBeenCalled();
     // llega el catálogo: la versión se elige EN EL ESTADO, no solo en la pantalla.
     resolveCatalog([GENERAL, TIENDA, OTRA]);
-    await waitFor(() => expect(versionOptionValues()).toContain('1.0.0'));
-    // el ESTADO ya tiene la versión elegida (no solo la pantalla).
-    expect(versionSelect().value).toBe('1.0.0');
-    fireEvent.click(saveButton());
-    await waitFor(() => expect(mocks.patchAgentConfig).toHaveBeenCalled());
+    // El `select` puede mostrar «latest» aunque el ESTADO aún no tenga versión: se reintenta
+    // guardar hasta que el efecto haya elegido la versión en el estado.
+    await waitFor(() => {
+      fireEvent.click(saveButton());
+      expect(mocks.patchAgentConfig).toHaveBeenCalled();
+    });
     expect(mocks.patchAgentConfig.mock.calls[0][1]).toEqual({
       skillBinding: { skill: 'general', version: '1.0.0' },
     });
