@@ -215,13 +215,30 @@ describe('T64-11 · publicar', () => {
     await waitFor(() => expect(mocks.listSkillsWithTools).toHaveBeenCalledTimes(2));
   });
 
-  it('field_too_long pone el error en el campo', async () => {
+  it('field_too_long (changelog) usa el texto de las notas de la versión', async () => {
     const dialog = await openDialog();
     mocks.publishOrgSkill.mockRejectedValueOnce(
       Object.assign(new Error('long'), { status: 400, code: 'field_too_long', field: 'changelog' }),
     );
     fireEvent.click(within(dialog).getByRole('button', { name: 'Publicar' }));
-    await waitFor(() => expect(within(dialog).getByText('El campo changelog es demasiado largo.')).not.toBeNull());
+    await waitFor(() =>
+      expect(
+        within(dialog).getByText('Las notas de la versión son demasiado largas (máximo 280 caracteres).'),
+      ).not.toBeNull(),
+    );
+  });
+
+  it('invalid_field pone el error con su campo', async () => {
+    const dialog = await openDialog();
+    mocks.publishOrgSkill.mockRejectedValueOnce(
+      Object.assign(new Error('bad'), { status: 400, code: 'invalid_field', field: 'expected_version' }),
+    );
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publicar' }));
+    await waitFor(() =>
+      expect(
+        within(dialog).getByText('El campo expected_version tiene un valor que no es válido.'),
+      ).not.toBeNull(),
+    );
   });
 
   it('dos clics en Publicar son un solo POST', async () => {
