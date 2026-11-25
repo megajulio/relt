@@ -593,6 +593,7 @@
   "errors.skill_read_only": "RELT skills cannot be edited.",
   "errors.skill_not_found": "That skill does not exist or is not available.",
   "errors.field_too_long": "The {field} field is too long.",
+  "errors.changelog_too_long": "The release notes are too long (280 characters maximum).",
   "errors.field_default": "indicated",
   "errors.skill_in_use.one": "Used by {count} agent.",
   "errors.skill_in_use.other": "Used by {count} agents.",

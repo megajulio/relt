@@ -41,11 +41,14 @@ const CODE_KEYS: Record<string, string> = {
 /** Texto en lenguaje claro para un error de skills (G-4.2), en el idioma activo. */
 export function skillErrorMessage(t: TFunction, info: SkillErrorInfo): string {
   if (info.code === 'field_too_long') {
+    // ANEXO-64-F (F-2.8, M10): el error de longitud del `changelog` tiene su propio texto.
+    if (info.field === 'changelog') return t('errors.changelog_too_long');
     return t('errors.field_too_long', { field: info.field ?? t('errors.field_default') });
   }
-  // ANEXO-64-F (F-2.11, M10): `field_read_only` también lleva el campo en su texto.
-  if (info.code === 'field_read_only') {
-    return t('errors.field_read_only', { field: info.field ?? t('errors.field_default') });
+  // ANEXO-64-F (F-2.11, M10): `field_read_only` e `invalid_field` llevan el campo en su texto.
+  if (info.code === 'field_read_only' || info.code === 'invalid_field') {
+    const key = info.code === 'field_read_only' ? 'errors.field_read_only' : 'errors.invalid_field';
+    return t(key, { field: info.field ?? t('errors.field_default') });
   }
   if (info.code === 'skill_in_use') {
     return t('errors.skill_in_use', { count: info.agents ?? 0 });

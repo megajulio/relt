@@ -593,6 +593,7 @@
   "errors.skill_read_only": "Las skills de RELT no se pueden editar.",
   "errors.skill_not_found": "Esa skill no existe o no está disponible.",
   "errors.field_too_long": "El campo {field} es demasiado largo.",
+  "errors.changelog_too_long": "Las notas de la versión son demasiado largas (máximo 280 caracteres).",
   "errors.field_default": "indicado",
   "errors.skill_in_use.one": "La usa {count} agente.",
   "errors.skill_in_use.other": "La usan {count} agentes.",
