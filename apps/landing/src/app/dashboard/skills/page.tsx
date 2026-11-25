@@ -94,6 +94,11 @@ export default function SkillsPage() {
 
   const submitBusy = useRef(false);
   const publishBusy = useRef(false);
+  // H-1 (ANEXO-64-H): la base y las tools por defecto se ponen UNA sola vez, en la primera
+  // carga que llega bien. El selector de idioma hace `router.refresh()`: conserva el
+  // formulario y cambia `t`, así que este efecto vuelve a correr; esa carga posterior
+  // actualiza la lista y NO puede reemplazar lo que el usuario está editando.
+  const defaultsApplied = useRef(false);
   // M6: identificadores de pedido para descartar respuestas atrasadas de otra skill.
   const editRequest = useRef(0);
   const previewRequest = useRef(0);
@@ -137,6 +142,10 @@ export default function SkillsPage() {
       .then((items) => {
         if (cancelled) return;
         setSkills(items);
+        // H-1: solo la primera carga que llega bien pone los valores por defecto; las
+        // posteriores (otro idioma) actualizan la lista y no tocan `base` ni `tools`.
+        if (defaultsApplied.current) return;
+        defaultsApplied.current = true;
         const firstRepo = items.find((s) => s.kind === 'repo');
         if (firstRepo) {
           setBase(firstRepo.name);
