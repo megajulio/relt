@@ -103,4 +103,21 @@ describe('T65-11 · Instrucciones del negocio: cargar, guardar, contador y plant
     expect(screen.queryByText('Completa los datos entre corchetes')).not.toBeNull();
     expect(putBusinessInstructions).not.toHaveBeenCalled();
   });
+
+  it('si can_edit es false: solo lectura, sin Guardar ni plantilla', async () => {
+    getBusinessInstructions.mockResolvedValue({ ...VIEW, content: 'Solo mira', can_edit: false });
+    renderWithI18n(<BusinessInstructionsPage />, 'es');
+    await waitFor(() =>
+      expect(screen.queryByLabelText('Instrucciones del negocio')).not.toBeNull(),
+    );
+    const ta = screen.queryByLabelText('Instrucciones del negocio') as HTMLTextAreaElement | null;
+    expect(ta).not.toBeNull();
+    expect((ta as HTMLTextAreaElement).value).toBe('Solo mira');
+    expect((ta as HTMLTextAreaElement).readOnly).toBe(true);
+    expect(
+      screen.queryByText('Solo lectura: tu rol no puede editar las Instrucciones del negocio.'),
+    ).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Guardar' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Usar plantilla' })).toBeNull();
+  });
 });
