@@ -58,7 +58,10 @@ describe('T57-14 · alta: selector de skill (D5) e Instrucciones del negocio (D4
     const generalOption = Array.from(select.options).find((o) => o.value === 'general');
     expect(generalOption?.textContent).toContain('Consulta productos');
 
-    const textarea = screen.getByLabelText('Instrucciones del negocio') as HTMLTextAreaElement;
-    expect(textarea.value).toContain('Somos [nombre del negocio]');
+    // ORDEN-65 · N5 (A-7, clase A): el campo del agente es «Ajuste de este agente» y
+    // en el alta empieza VACÍO (la plantilla vive en las Instrucciones del negocio).
+    const textarea = screen.getByLabelText('Ajuste de este agente') as HTMLTextAreaElement;
+    expect(textarea.value).toBe('');
+
   });
 });
