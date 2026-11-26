@@ -77,13 +77,13 @@ describe('T64-15 · textos de V9 (es y en)', () => {
     expect(screen.queryByText(SKILL_HELP_EN)).not.toBeNull();
   });
 
-  it('en el agente, es: «Instrucciones del negocio»', () => {
+  it('en el agente, es: «Ajuste de este agente»', () => {
     renderWithI18n(<AgentConfigForm agent={AGENT} onSaved={() => {}} />, 'es');
-    expect(screen.queryByLabelText('Instrucciones del negocio')).not.toBeNull();
+    expect(screen.queryByLabelText('Ajuste de este agente')).not.toBeNull();
   });
 
-  it('en el agente, en: «Business instructions»', () => {
+  it('en el agente, en: «Agent adjustment»', () => {
     renderWithI18n(<AgentConfigForm agent={AGENT} onSaved={() => {}} />, 'en');
-    expect(screen.queryByLabelText('Business instructions')).not.toBeNull();
+    expect(screen.queryByLabelText('Agent adjustment')).not.toBeNull();
   });
 });

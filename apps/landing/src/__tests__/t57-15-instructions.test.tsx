@@ -59,7 +59,9 @@ describe('T57-15 · Instrucciones del negocio (D4)', () => {
 
   it('muestra el contador n/4000 y el aviso de marcadores', () => {
     render(<AgentConfigForm agent={AGENT} onSaved={() => {}} />);
-    const ta = screen.queryByLabelText('Instrucciones del negocio') as HTMLTextAreaElement | null;
+    // ORDEN-65 · N5 (A-7, clase A): el campo del agente se llama «Ajuste de este agente».
+    const ta = screen.queryByLabelText('Ajuste de este agente') as HTMLTextAreaElement | null;
+
     expect(ta).not.toBeNull();
     expect((ta as HTMLTextAreaElement).value).toBe('abc');
     expect(screen.queryByText('3/4000')).not.toBeNull();
@@ -72,7 +74,7 @@ describe('T57-15 · Instrucciones del negocio (D4)', () => {
 
   it('con más de 4000 caracteres, Guardar se deshabilita', () => {
     render(<AgentConfigForm agent={AGENT} onSaved={() => {}} />);
-    const ta = screen.queryByLabelText('Instrucciones del negocio') as HTMLTextAreaElement | null;
+    const ta = screen.queryByLabelText('Ajuste de este agente') as HTMLTextAreaElement | null;
     expect(ta).not.toBeNull();
     fireEvent.change(ta as HTMLTextAreaElement, {
       target: { value: 'x'.repeat(MAX_BUSINESS_INSTRUCTIONS + 1) },

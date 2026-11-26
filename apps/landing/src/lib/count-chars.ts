@@ -14,6 +14,14 @@
 /** Instrucciones del negocio (D4): máximo 4000 code points. */
 export const MAX_BUSINESS_INSTRUCTIONS = 4000;
 
+/**
+ * Instrucciones del negocio por organización (ORDEN-65 · A-2): máximo 8000.
+ * Es un límite PROPIO de la página nueva; `MAX_BUSINESS_INSTRUCTIONS` (4000)
+ * sigue siendo el del ajuste de cada agente.
+ */
+export const MAX_ORG_INSTRUCTIONS = 8000;
+
+
 /** Instrucciones de una skill de org (D2): máximo 8000 code points. */
 export const MAX_SKILL_INSTRUCTIONS = 8000;
 

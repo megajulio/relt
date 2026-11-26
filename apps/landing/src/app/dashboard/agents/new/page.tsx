@@ -10,9 +10,7 @@ import { selectableSkills } from '@/lib/skill-catalog';
 import { buildCreateModelConfig, type ModelStrategyChoice } from '@/lib/model-selection';
 import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem, type ModelErrorTarget } from '@/lib/models';
 import SkillSelect from '@/components/skill-select';
-import BusinessInstructions, {
-  BUSINESS_INSTRUCTIONS_TEMPLATE_KEY,
-} from '@/components/business-instructions';
+import AgentAdjustment from '@/components/agent-adjustment';
 import { useT } from '@/i18n/provider';
 
 const inputCls =
@@ -29,7 +27,10 @@ export default function CreateAgentPage() {
   const [key, setKey] = useState('');
   const [defaultSkill, setDefaultSkill] = useState('general');
   const [status, setStatus] = useState<'active' | 'paused' | 'archived'>('active');
-  const [systemPrompt, setSystemPrompt] = useState(() => t(BUSINESS_INSTRUCTIONS_TEMPLATE_KEY));
+  // N5 (#65): el ajuste del agente empieza VACÍO en el alta; la plantilla vive en
+  // las Instrucciones del negocio de la organización.
+  const [systemPrompt, setSystemPrompt] = useState('');
+
   const [strategy, setStrategy] = useState<ModelStrategyChoice>('auto');
   const [reasoningModel, setReasoningModel] = useState('');
   const [responseModel, setResponseModel] = useState('');
@@ -206,8 +207,8 @@ export default function CreateAgentPage() {
           </select>
         </div>
 
-        {/* Instrucciones del negocio (D4): reutiliza config.systemPrompt */}
-        <BusinessInstructions
+        {/* N5 (#65): ajuste propio de este agente; empieza vacío. */}
+        <AgentAdjustment
           value={systemPrompt}
           onChange={setSystemPrompt}
           disabled={saving}
