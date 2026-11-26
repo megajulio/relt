@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getAgent, patchAgentConfig, type AgentDetail } from '@/lib/agents';
+import { isRoleForbidden, useAgentAccess } from '@/lib/agent-role';
 import { useT } from '@/i18n/provider';
 
 const inputCls =
@@ -42,6 +43,8 @@ export default function AgentMemoryForm({
   onSaved: (a: AgentDetail) => void;
 }) {
   const t = useT();
+  // ORDEN-68 · R3/A-6: member y viewer no tienen «Guardar».
+  const access = useAgentAccess();
   const [stEnabled, setStEnabled] = useState(agent.config.memory?.shortTerm?.enabled ?? false);
   const [stLimit, setStLimit] = useState<string>(
     agent.config.memory?.shortTerm?.limit != null
@@ -89,7 +92,7 @@ export default function AgentMemoryForm({
       onSaved(fresh);
       setSaved(true);
     } catch (err: any) {
-      setError(err?.message || 'Error al guardar memory configuration');
+      setError(isRoleForbidden(err) ? t('agents.read_only_role') : err?.message || 'Error al guardar memory configuration');
     } finally {
       setSaving(false);
     }
@@ -105,6 +108,14 @@ export default function AgentMemoryForm({
 
   return (
     <div className="space-y-5">
+      {access.readOnly && (
+        <div
+          data-testid="agents-read-only"
+          className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300"
+        >
+          {t('agents.read_only_role')}
+        </div>
+      )}
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
           {error}
@@ -153,13 +164,15 @@ export default function AgentMemoryForm({
         >
           {t("agents.memory.reset")}
         </button>
-        <button
-          onClick={handleSave}
-          disabled={!dirty || saving}
-          className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? 'Saving...' : 'Save changes'}
-        </button>
+        {!access.readOnly && (
+          <button
+            onClick={handleSave}
+            disabled={!dirty || saving}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Saving...' : 'Save changes'}
+          </button>
+        )}
       </div>
 
       <p className="text-xs text-gray-600">

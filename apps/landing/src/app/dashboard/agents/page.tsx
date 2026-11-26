@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useDashboardAuth } from '@/components/dashboard/DashboardAuthProvider';
 import Link from 'next/link';
 import { listAgents, type Agent } from '@/lib/agents';
+import { useAgentAccess } from '@/lib/agent-role';
 import { useT } from '@/i18n/provider';
 
 const STATUS_STYLES: Record<Agent['status'], string> = {
@@ -15,6 +16,8 @@ const STATUS_STYLES: Record<Agent['status'], string> = {
 export default function AgentsPage() {
   const t = useT();
   useDashboardAuth();
+  // ORDEN-68 · R3/A-6: member y viewer ven los agentes en SOLO LECTURA.
+  const access = useAgentAccess();
 
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,13 +38,24 @@ export default function AgentsPage() {
           <h1 className="text-3xl font-bold text-white">{t("agents.agents")}</h1>
           <p className="text-gray-400 mt-1">{t("agents.manage-your-ai-agents-and-their-configurations")}</p>
         </div>
-        <Link
-          href="/dashboard/agents/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
-        >
-          {t("agents.create-agent")}
-        </Link>
+        {!access.readOnly && (
+          <Link
+            href="/dashboard/agents/new"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            {t("agents.create-agent")}
+          </Link>
+        )}
       </div>
+
+      {access.readOnly && (
+        <div
+          data-testid="agents-read-only"
+          className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-300"
+        >
+          {t('agents.read_only_role')}
+        </div>
+      )}
 
       {/* Content */}
       {loading && (

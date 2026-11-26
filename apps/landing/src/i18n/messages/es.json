@@ -56,6 +56,7 @@
   "agents.error": "Error",
   "agents.loading-agents": "Cargando agentes...",
   "agents.manage-your-ai-agents-and-their-configurations": "Gestiona tus agentes de IA y su configuración.",
+  "agents.read_only_role": "Tu rol permite ver los agentes, no modificarlos.",
   "agents.memory.ej-10": "ej: 10",
   "agents.memory.el-patch-envia-el-objeto-memory-completo-shortterm-summa": "El PATCH envía el objeto memory completo (shortTerm + summary) para ser seguro ante la semántica de merge del backend. La validación final es Zod server-side.",
   "agents.memory.entero-positivo-validado-por-zod-server-side-vacio-sin-l": "Entero positivo (validado por Zod server-side). Vacío = sin límite explícito.",

@@ -11,6 +11,7 @@ import {
 import { selectableSkills, selectorTools } from '@/lib/skill-catalog';
 import { capabilitiesLabel, capabilityPhrases } from '@/lib/skill-labels';
 import { skillErrorFrom, skillLoadErrorFrom } from '@/lib/skill-errors';
+import { isRoleForbidden, useAgentAccess } from '@/lib/agent-role';
 import { useT } from '@/i18n/provider';
 
 const inputCls =
@@ -39,6 +40,8 @@ export default function AgentSkillsForm({
   onSaved: (a: AgentDetail) => void;
 }) {
   const t = useT();
+  // ORDEN-68 · R3/A-6: member y viewer no tienen «Guardar».
+  const access = useAgentAccess();
   const [catalog, setCatalog] = useState<SkillListItem[]>([]);
   // N1: el catálogo tiene TRES estados: cargando, error y cargado.
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -254,7 +257,8 @@ export default function AgentSkillsForm({
       setSaved(true);
     } catch (err: unknown) {
       // G-4.2 / E-2: al usuario nunca se le muestra el código crudo.
-      setError(skillErrorFrom(t, err));
+      // R3/A-6: un 403 de la guarda usa el aviso de solo lectura.
+      setError(isRoleForbidden(err) ? t('agents.read_only_role') : skillErrorFrom(t, err));
     } finally {
       setSaving(false);
     }
@@ -270,6 +274,14 @@ export default function AgentSkillsForm({
 
   return (
     <div className="space-y-5">
+      {access.readOnly && (
+        <div
+          data-testid="agents-read-only"
+          className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300"
+        >
+          {t('agents.read_only_role')}
+        </div>
+      )}
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
           {error}
@@ -401,13 +413,15 @@ export default function AgentSkillsForm({
         >
           {t("agents.skills.reset")}
         </button>
-        <button
-          onClick={handleSave}
-          disabled={!dirty || saving}
-          className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? t("agents.skills.guardando") : t("agents.skills.guardar-cambios")}
-        </button>
+        {!access.readOnly && (
+          <button
+            onClick={handleSave}
+            disabled={!dirty || saving}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? t("agents.skills.guardando") : t("agents.skills.guardar-cambios")}
+          </button>
+        )}
       </div>
     </div>
   );

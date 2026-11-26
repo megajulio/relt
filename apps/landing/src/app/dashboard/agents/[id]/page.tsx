@@ -13,6 +13,7 @@ import AgentToolsForm from '@/components/agent-tools-form';
 import AgentMemoryForm from '@/components/agent-memory-form';
 import AgentChannelsForm from '@/components/agent-channels-form';
 import AgentStatusControl from '@/components/agent-status-control';
+import { useAgentAccess } from '@/lib/agent-role';
 import { useT } from '@/i18n/provider';
 
 const TABS = ['General', 'Configuration', 'Skills', 'Tools', 'Channels', 'Memory'] as const;
@@ -62,6 +63,8 @@ export default function AgentDetailPage() {
   const id = params.id as string;
   const { data: authData } = useDashboardAuth();
   const orgId = authData?.organizations?.[0]?.id;
+  // ORDEN-68 · R3/A-6: con member o viewer el detalle es SOLO LECTURA.
+  const access = useAgentAccess();
   const [agent, setAgent] = useState<AgentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,6 +121,15 @@ export default function AgentDetailPage() {
             </div>
             <AgentStatusControl agent={agent} onUpdated={setAgent} />
           </div>
+
+          {access.readOnly && (
+            <div
+              data-testid="agents-read-only"
+              className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-300"
+            >
+              {t('agents.read_only_role')}
+            </div>
+          )}
 
           {/* Orden #49 · D5: aviso en el detalle del Agent (fuera de la pestaña Channels,
               que muestra el suyo al lado de la acción de asignar). */}

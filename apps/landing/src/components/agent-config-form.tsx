@@ -18,6 +18,7 @@ import {
 } from '@/lib/models';
 import AgentAdjustment from '@/components/agent-adjustment';
 import { countChars, MAX_BUSINESS_INSTRUCTIONS } from '@/lib/count-chars';
+import { isRoleForbidden, useAgentAccess } from '@/lib/agent-role';
 
 import { useT } from '@/i18n/provider';
 
@@ -44,6 +45,8 @@ function AgentConfigFormContent({
   onSaved: (a: AgentDetail) => void;
 }) {
   const t = useT();
+  // ORDEN-68 · R3/A-6: member y viewer no tienen «Guardar».
+  const access = useAgentAccess();
   const initialModel = selectionFromConfig(agent.config);
   const [maxSteps, setMaxSteps] = useState<string>(String(agent.config.maxSteps ?? ''));
   const [strategy, setStrategy] = useState<ModelStrategyChoice>(initialModel.strategy);
@@ -121,7 +124,14 @@ function AgentConfigFormContent({
       onSaved(fresh);
       setSaved(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al guardar la configuración');
+      // R3/A-6: un 403 de la guarda se atiende con el aviso, sin perder lo escrito.
+      setError(
+        isRoleForbidden(err)
+          ? t('agents.read_only_role')
+          : err instanceof Error
+            ? err.message
+            : 'Error al guardar la configuración',
+      );
       const errorInfo = err as { code?: string; field?: string } | undefined;
       setErrorField(resolveModelErrorField(errorInfo?.code, patch, strategy, models, errorInfo?.field));
     } finally {
@@ -143,6 +153,14 @@ function AgentConfigFormContent({
 
   return (
     <div className="space-y-5">
+      {access.readOnly && (
+        <div
+          data-testid="agents-read-only"
+          className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300"
+        >
+          {t('agents.read_only_role')}
+        </div>
+      )}
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
           {error}
@@ -258,13 +276,15 @@ function AgentConfigFormContent({
         >
           {t("agents.config.reset")}
         </button>
-        <button
-          onClick={handleSave}
-          disabled={!dirty || saving || overLimit}
-          className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? 'Saving...' : 'Save changes'}
-        </button>
+        {!access.readOnly && (
+          <button
+            onClick={handleSave}
+            disabled={!dirty || saving || overLimit}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Saving...' : 'Save changes'}
+          </button>
+        )}
       </div>
 
       <p className="text-xs text-gray-600">
