@@ -15,11 +15,14 @@ import { useT } from '@/i18n/provider';
 const NAV_ITEMS = [
   { href: '/dashboard', labelKey: 'nav.overview', exact: true },
   { href: '/dashboard/agents', labelKey: 'nav.agents' },
+  { href: '/dashboard/business-instructions', labelKey: 'nav.businessInstructions' },
   { href: '/dashboard/skills', labelKey: 'nav.skills' },
+  { href: '/dashboard/tools', labelKey: 'nav.tools' },
   { href: '/dashboard/api-keys', labelKey: 'nav.apiKeys' },
   { href: '/dashboard/activity', labelKey: 'nav.activity' },
   { href: '/dashboard/quickstart', labelKey: 'nav.quickstart' },
 ];
+
 
 /** Solo aparece si el servidor confirma que la sesión es de un administrador de plataforma. */
 const PLATFORM_NAV_ITEM = { href: '/dashboard/platform/clients', labelKey: 'nav.platform' };

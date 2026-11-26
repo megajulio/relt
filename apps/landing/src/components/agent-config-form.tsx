@@ -16,8 +16,9 @@ import {
   type ModelCatalogItem,
   type ModelErrorTarget,
 } from '@/lib/models';
-import BusinessInstructions from '@/components/business-instructions';
+import AgentAdjustment from '@/components/agent-adjustment';
 import { countChars, MAX_BUSINESS_INSTRUCTIONS } from '@/lib/count-chars';
+
 import { useT } from '@/i18n/provider';
 
 const inputCls =
@@ -238,10 +239,11 @@ function AgentConfigFormContent({
         </Field>
       </div>
 
-      {/* D4 (#57): el prompt de sistema se edita como «Instrucciones del negocio». Se conserva
-          la etiqueta de sección «System prompt» del formulario de producción (arnés ya existente). */}
+      {/* N5 (#65): el texto propio del agente es «Ajuste de este agente». Se conserva
+          la etiqueta de sección «System prompt» del formulario de producción (arnés
+          ya existente) y el límite de 4000 del ajuste. */}
       <Field label="System prompt">
-        <BusinessInstructions
+        <AgentAdjustment
           value={systemPrompt}
           onChange={setSystemPrompt}
           className={inputCls}
