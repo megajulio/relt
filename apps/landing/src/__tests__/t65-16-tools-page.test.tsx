@@ -58,25 +58,25 @@ describe('T65-16 · pantalla de Tools, solo lectura', () => {
     await waitFor(() => expect(document.querySelectorAll('[data-testid="tool-row"]').length).toBe(2));
 
     // Frase del mapa existente (D5) y nombre técnico.
-    expect(screen.getByText('Busca datos de clientes')).not.toBeNull();
-    expect(screen.getByText('customers.lookup')).not.toBeNull();
-    expect(screen.getByText('Consulta')).not.toBeNull();
-    expect(screen.getByText('Permitida')).not.toBeNull();
+    expect(screen.queryByText('Busca datos de clientes')).not.toBeNull();
+    expect(screen.queryByText('customers.lookup')).not.toBeNull();
+    expect(screen.queryByText('Consulta')).not.toBeNull();
+    expect(screen.queryByText('Permitida')).not.toBeNull();
 
     // Skill bloqueada por permisos del negocio.
     expect(
-      screen.getByText('La usan: General, Ventas (bloqueada: a tu negocio le falta un permiso)'),
+      screen.queryByText('La usan: General, Ventas (bloqueada: a tu negocio le falta un permiso)'),
     ).not.toBeNull();
 
     // Si falta la frase, la de reserva con el nombre técnico; tool de escritura y sin skills.
-    expect(screen.getByText('Otra capacidad (x.unknown)')).not.toBeNull();
-    expect(screen.getByText('Modifica datos')).not.toBeNull();
-    expect(screen.getByText('No permitida')).not.toBeNull();
-    expect(screen.getByText('Ninguna skill la usa')).not.toBeNull();
+    expect(screen.queryByText('Otra capacidad (x.unknown)')).not.toBeNull();
+    expect(screen.queryByText('Modifica datos')).not.toBeNull();
+    expect(screen.queryByText('No permitida')).not.toBeNull();
+    expect(screen.queryByText('Ninguna skill la usa')).not.toBeNull();
 
     // La aclaración de la pantalla.
     expect(
-      screen.getByText(
+      screen.queryByText(
         'Permitida no quiere decir que todos los agentes la usen: depende de su skill.',
       ),
     ).not.toBeNull();
