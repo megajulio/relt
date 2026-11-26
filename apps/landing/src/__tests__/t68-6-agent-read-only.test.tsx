@@ -150,6 +150,21 @@ describe('T68-6 · el panel de agentes en solo lectura', () => {
     expect(screen.queryByRole('button', { name: /Unassign/i })).toBeNull();
   });
 
+  it('con el rol DESCONOCIDO, el panel se comporta como hoy (decide el backend)', async () => {
+    state.role = null;
+    renderEs(<AgentsPage />);
+    await waitFor(() => expect(screen.queryByText('Agente Uno')).not.toBeNull());
+
+    expect(screen.queryByRole('link', { name: 'Crear agente' })).not.toBeNull();
+    expect(screen.queryByTestId('agents-read-only')).toBeNull();
+
+    cleanup();
+    renderEs(<CreateAgentPage />);
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Create Agent/i })).not.toBeNull());
+    const fieldset = document.querySelector('fieldset') as HTMLFieldSetElement | null;
+    expect(fieldset?.disabled ?? false).toBe(false);
+  });
+
   it('con dueño, el detalle sigue como hoy (control de estado y «Guardar»)', async () => {
     state.role = 'owner';
     renderEs(<AgentDetailPage />);
