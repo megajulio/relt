@@ -93,7 +93,7 @@ describe('T65-16 · pantalla de Tools, solo lectura', () => {
     renderWithI18n(<ToolsPage />, 'es');
 
     await waitFor(() =>
-      expect(screen.getByText('No se pudieron cargar las tools.')).not.toBeNull(),
+      expect(screen.queryByText('No se pudieron cargar las tools.')).not.toBeNull(),
     );
     expect(document.querySelectorAll('[data-testid="tool-row"]').length).toBe(0);
 

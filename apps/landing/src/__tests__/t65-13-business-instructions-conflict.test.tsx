@@ -54,7 +54,7 @@ describe('T65-13 · el 409 conserva lo escrito y no reintenta', () => {
     fireEvent.change(ta as HTMLTextAreaElement, { target: { value: 'Lo que escribí' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
-    await waitFor(() => expect(screen.getByText(CONFLICT)).not.toBeNull());
+    await waitFor(() => expect(screen.queryByText(CONFLICT)).not.toBeNull());
     expect((screen.getByLabelText('Instrucciones del negocio') as HTMLTextAreaElement).value).toBe(
       'Lo que escribí',
     );

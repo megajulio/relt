@@ -90,9 +90,9 @@ describe('T65-15 · «Ajuste de este agente» en el alta y en el detalle', () =>
 
   it('en el detalle, editar otra cosa NO manda ni cambia systemPrompt', async () => {
     renderWithI18n(<AgentConfigForm agent={AGENT} onSaved={() => {}} />, 'es');
-    expect(
-      (screen.getByLabelText('Ajuste de este agente') as HTMLTextAreaElement).value,
-    ).toBe('ajuste guardado');
+    const ta = screen.queryByLabelText('Ajuste de este agente') as HTMLTextAreaElement | null;
+    expect(ta).not.toBeNull();
+    expect((ta as HTMLTextAreaElement).value).toBe('ajuste guardado');
 
     fireEvent.change(screen.getByLabelText('Tono'), { target: { value: 'formal' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));

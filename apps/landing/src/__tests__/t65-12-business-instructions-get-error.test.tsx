@@ -42,7 +42,7 @@ describe('T65-12 · si el GET falla no hay editor ni Guardar', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText('No se pudieron cargar las Instrucciones del negocio.'),
+        screen.queryByText('No se pudieron cargar las Instrucciones del negocio.'),
       ).not.toBeNull(),
     );
     expect(screen.queryByLabelText('Instrucciones del negocio')).toBeNull();
