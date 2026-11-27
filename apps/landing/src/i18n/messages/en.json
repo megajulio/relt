@@ -622,6 +622,7 @@
   "errors.cargar": "Could not load. Try again.",
 
   "sandbox.qr.not-provisioned": "Your sandbox is not provisioned yet. Create your first Agent to automatically provision your WhatsApp sandbox.",
+  "sandbox.qr_read_only_role": "Your role can't link a phone. Ask an admin.",
   "skills.state.draft": "Draft",
   "skills.state.active": "Active",
   "skills.state.archived": "Archived",

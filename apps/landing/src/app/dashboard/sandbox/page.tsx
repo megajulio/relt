@@ -8,15 +8,23 @@ import { useSandboxConnection } from '@/lib/use-sandbox-connection';
 import { useSandboxStatus } from '@/lib/use-sandbox-status';
 import { useUnassignedChannels } from '@/lib/use-unassigned-channels';
 import { D2_CONFLICT_TEXT, isD2Conflict } from '@/lib/orden49';
+import { useAgentAccess } from '@/lib/agent-role';
 import { useT } from '@/i18n/provider';
 
 export default function SandboxPage() {
   const t = useT();
   const { data: authData } = useDashboardAuth();
+  // D6 (#69, ANEXO-69-A A-6): el rol sale de la MISMA pieza y la MISMA org que
+  // en los agentes (`lib/agent-role.ts`, `/auth/me` → organizations[0]).
+  // `member` y `viewer` NO piden `/sandbox/qr`: el QR vincula un teléfono.
+  const access = useAgentAccess();
 
   const orgId = authData.organizations[0]?.id;
 
-  const { data, loading, error, refresh } = useSandboxQR(orgId);
+  const { data, loading, error, forbidden, refresh } = useSandboxQR(
+    orgId,
+    !access.readOnly,
+  );
   const {
     data: connection,
     loading: connectionLoading,
@@ -63,7 +71,27 @@ export default function SandboxPage() {
       </div>
 
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        {loading && (
+        {/* A-6 (#69): el aviso del rol, y nada de QR ni de sus botones. */}
+        {access.readOnly && (
+          <div
+            data-testid="sandbox-qr-read-only-role"
+            className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-300"
+          >
+            {t('sandbox.qr_read_only_role')}
+          </div>
+        )}
+
+        {/* A-6: un 403 de la guarda de rol se ve con el MISMO aviso y sin reintentar. */}
+        {!access.readOnly && forbidden && (
+          <div
+            data-testid="sandbox-qr-forbidden"
+            className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-300"
+          >
+            {t('sandbox.qr_read_only_role')}
+          </div>
+        )}
+
+        {!access.readOnly && !forbidden && loading && (
           <div className="space-y-4">
             <div className="h-5 bg-gray-800 rounded w-1/3 animate-pulse" />
             <div className="h-3 bg-gray-800 rounded w-2/3 animate-pulse" />
@@ -71,7 +99,7 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {!loading && error && (
+        {!access.readOnly && !forbidden && !loading && error && (
           <div className="space-y-4">
             <div>
               <h2 className="text-lg font-semibold text-white">
@@ -89,7 +117,7 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {d2Conflict && (
+        {!access.readOnly && !forbidden && d2Conflict && (
           <div className="text-center py-8" data-testid="d2-sandbox-conflict">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-400/10 text-red-300">
               <span className="text-2xl">!</span>
@@ -133,7 +161,7 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {!d2Conflict && !loading && !error && data?.status === 'not_provisioned' && (
+        {!access.readOnly && !forbidden && !d2Conflict && !loading && !error && data?.status === 'not_provisioned' && (
           <div className="text-center py-8">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-400/10 text-blue-300">
               <span className="text-2xl">＋</span>
@@ -170,7 +198,7 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {!d2Conflict && !connectionLoading && connection?.state === 'connected' && (
+        {!access.readOnly && !forbidden && !d2Conflict && !connectionLoading && connection?.state === 'connected' && (
           <div className="text-center py-8">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">
               <span className="text-2xl">✓</span>
@@ -219,7 +247,9 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {!d2Conflict &&
+        {!access.readOnly &&
+          !forbidden &&
+          !d2Conflict &&
           !connectionLoading &&
           (connection?.state === 'qr_required' || connection?.state === 'connecting') &&
           !error &&
@@ -267,7 +297,9 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {!d2Conflict &&
+        {!access.readOnly &&
+          !forbidden &&
+          !d2Conflict &&
           !connectionLoading &&
           !connectionError &&
           connection?.state === 'disconnected' && (
@@ -300,7 +332,9 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {!d2Conflict &&
+        {!access.readOnly &&
+          !forbidden &&
+          !d2Conflict &&
           !loading &&
           !error &&
           !data?.qr_base64 &&
