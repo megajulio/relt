@@ -622,6 +622,7 @@
   "errors.cargar": "No se pudo cargar. Intenta de nuevo.",
 
   "sandbox.qr.not-provisioned": "Tu sandbox aún no está aprovisionado. Crea tu primer Agente para aprovisionar tu sandbox de WhatsApp automáticamente.",
+  "sandbox.qr_read_only_role": "Tu rol no permite vincular un teléfono. Pídeselo a un administrador.",
   "skills.state.draft": "Borrador",
   "skills.state.active": "Activa",
   "skills.state.archived": "Archivada",

@@ -21,19 +21,30 @@ interface UseSandboxQRResult {
   data: SandboxQR | null;
   loading: boolean;
   error: string | null;
+  /**
+   * D6 (#69, ANEXO-69-A A-6): el backend respondió **403** `insufficient-role`.
+   * La página muestra el aviso del rol (no el error genérico) y NO reintenta.
+   */
+  forbidden: boolean;
   refresh: () => Promise<void>;
 }
 
 export function useSandboxQR(
   orgId: string | undefined,
+  /**
+   * D6 (#69, A-6): con `member` o `viewer` la página NO pide `/sandbox/qr`
+   * (el QR permite vincular un teléfono). Se pasa `false` y no hay petición.
+   */
+  enabled = true,
 ): UseSandboxQRResult {
   const [data, setData] = useState<SandboxQR | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [forbidden, setForbidden] = useState(false);
 
   const fetchQR = useCallback(
     async (showLoading = true) => {
-      if (!orgId) {
+      if (!enabled || !orgId) {
         setLoading(false);
         return;
       }
@@ -44,6 +55,7 @@ export function useSandboxQR(
         }
 
         setError(null);
+        setForbidden(false);
 
         const result = await api.request<SandboxQR>(
           '/control/v1/sandbox/qr',
@@ -68,6 +80,14 @@ export function useSandboxQR(
           return;
         }
 
+        // A-6 (#69): un 403 de la guarda de rol no es un error de carga.
+        if (status === 403) {
+          setData(null);
+          setError(null);
+          setForbidden(true);
+          return;
+        }
+
         setError((err as Error).message);
       } finally {
         if (showLoading) {
@@ -75,7 +95,7 @@ export function useSandboxQR(
         }
       }
     },
-    [orgId],
+    [orgId, enabled],
   );
 
   // Carga inicial.
@@ -85,7 +105,7 @@ export function useSandboxQR(
 
   // Polling mientras existe un QR disponible.
   useEffect(() => {
-    if (!orgId || !data?.qr_base64) {
+    if (!enabled || !orgId || !data?.qr_base64) {
       return;
     }
 
@@ -96,12 +116,13 @@ export function useSandboxQR(
     return () => {
       window.clearInterval(interval);
     };
-  }, [orgId, data?.qr_base64, fetchQR]);
+  }, [orgId, enabled, data?.qr_base64, fetchQR]);
 
   return {
     data,
     loading,
     error,
+    forbidden,
     refresh: () => fetchQR(true),
   };
 }
