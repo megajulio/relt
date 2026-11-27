@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { assignChannel } from '@/lib/agents';
 import { D5_NO_AGENT_TEXT } from '@/lib/orden49';
+import { useAgentAccess } from '@/lib/agent-role';
 import { useT } from '@/i18n/provider';
 
 /**
@@ -33,6 +34,8 @@ export function ChannelWithoutAgentNotice({
   testId = 'd5-notice',
 }: ChannelWithoutAgentNoticeProps) {
   const t = useT();
+  // ORDEN-68 · R3/A-6: en solo lectura no hay botón de asignar.
+  const access = useAgentAccess();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +66,7 @@ export function ChannelWithoutAgentNotice({
       </div>
 
       <div className="mt-3">
-        {agentId ? (
+        {access.readOnly ? null : agentId ? (
           <button
             onClick={handleAssign}
             disabled={busy}

@@ -11,6 +11,7 @@ import {
 } from '@/lib/agents';
 import { ChannelWithoutAgentNotice } from '@/components/dashboard/ChannelWithoutAgentNotice';
 import type { UnassignedChannel } from '@/lib/use-unassigned-channels';
+import { isRoleForbidden, useAgentAccess } from '@/lib/agent-role';
 import { useT } from '@/i18n/provider';
 
 const selectCls =
@@ -27,6 +28,8 @@ export default function AgentChannelsForm({
   unassignedChannels?: UnassignedChannel[];
 }) {
   const t = useT();
+  // ORDEN-68 · R3/A-6: member y viewer no agregan ni quitan canales.
+  const access = useAgentAccess();
   const [catalog, setCatalog] = useState<PhoneNumberCatalogItem[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [selectedId, setSelectedId] = useState('');
@@ -72,7 +75,10 @@ export default function AgentChannelsForm({
       setSelectedId('');
     } catch (err: any) {
       const msg = err?.message || 'Error assigning channel';
-      if (msg.toLowerCase().includes('conflict') || msg.includes('409')) {
+      // R3/A-6: un 403 de la guarda usa el aviso de solo lectura.
+      if (isRoleForbidden(err)) {
+        setError(t('agents.read_only_role'));
+      } else if (msg.toLowerCase().includes('conflict') || msg.includes('409')) {
         setError('This channel is already assigned to this agent.');
       } else {
         setError(msg);
@@ -92,7 +98,7 @@ export default function AgentChannelsForm({
       onSaved(fresh);
       setInfo('Channel unassigned successfully.');
     } catch (err: any) {
-      setError(err?.message || 'Error unassigning channel');
+      setError(isRoleForbidden(err) ? t('agents.read_only_role') : err?.message || 'Error unassigning channel');
     } finally {
       setBusy(null);
     }
@@ -113,6 +119,15 @@ export default function AgentChannelsForm({
 
   return (
     <div className="space-y-6">
+      {access.readOnly && (
+        <div
+          data-testid="agents-read-only"
+          className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300"
+        >
+          {t('agents.read_only_role')}
+        </div>
+      )}
+
       {/* Orden #49 · D5: canal conectado sin agente, con la acción de asignar. */}
       {unassignedChannels && unassignedChannels.length > 0 && (
         <div className="space-y-3">
@@ -175,13 +190,15 @@ export default function AgentChannelsForm({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => handleUnassign(b.id)}
-                      disabled={busy === b.id}
-                      className="px-3 py-1 rounded-md text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-300 disabled:opacity-40 transition-colors"
-                    >
-                      {busy === b.id ? 'Removing...' : 'Unassign'}
-                    </button>
+                    {!access.readOnly && (
+                      <button
+                        onClick={() => handleUnassign(b.id)}
+                        disabled={busy === b.id}
+                        className="px-3 py-1 rounded-md text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-300 disabled:opacity-40 transition-colors"
+                      >
+                        {busy === b.id ? 'Removing...' : 'Unassign'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -190,8 +207,8 @@ export default function AgentChannelsForm({
         )}
       </div>
 
-      {/* Assign new */}
-      <div className="border-t border-gray-800 pt-5">
+      {/* Assign new — R3/A-6: oculto en solo lectura */}
+      <div className={`border-t border-gray-800 pt-5${access.readOnly ? ' hidden' : ''}`} aria-hidden={access.readOnly}>
         <div className="text-sm text-gray-400 mb-3">{t("agents.channels.assign-new-channel")}</div>
 
         {loadingCatalog && (

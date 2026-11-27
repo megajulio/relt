@@ -11,6 +11,7 @@ import { buildCreateModelConfig, type ModelStrategyChoice } from '@/lib/model-se
 import { listModels, optionsForField, resolveModelErrorField, type ModelCatalogItem, type ModelErrorTarget } from '@/lib/models';
 import SkillSelect from '@/components/skill-select';
 import AgentAdjustment from '@/components/agent-adjustment';
+import { useAgentAccess } from '@/lib/agent-role';
 import { useT } from '@/i18n/provider';
 
 const inputCls =
@@ -22,6 +23,8 @@ export default function CreateAgentPage() {
   const t = useT();
   const router = useRouter();
   useDashboardAuth();
+  // ORDEN-68 · R3/A-6: con member o viewer el alta es SOLO LECTURA (sin «Crear»).
+  const access = useAgentAccess();
 
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
@@ -147,7 +150,17 @@ export default function CreateAgentPage() {
         </div>
       )}
 
+      {access.readOnly && (
+        <div
+          data-testid="agents-read-only"
+          className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-300"
+        >
+          {t('agents.read_only_role')}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
+        <fieldset disabled={access.readOnly} className="space-y-5">
         {/* Name */}
         <div>
           <label className={labelCls}>{t("agents.new.name")}</label>
@@ -278,18 +291,20 @@ export default function CreateAgentPage() {
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">
-          <button
-            type="submit"
-            disabled={
-              saving ||
-              skillsLoading ||
-              !!skillsError ||
-              !selectableSkills(skills).some((skill) => skill.name === defaultSkill)
-            }
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium px-6 py-2 rounded-lg transition-colors"
-          >
-            {saving ? 'Creating...' : 'Create Agent'}
-          </button>
+          {!access.readOnly && (
+            <button
+              type="submit"
+              disabled={
+                saving ||
+                skillsLoading ||
+                !!skillsError ||
+                !selectableSkills(skills).some((skill) => skill.name === defaultSkill)
+              }
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium px-6 py-2 rounded-lg transition-colors"
+            >
+              {saving ? 'Creating...' : 'Create Agent'}
+            </button>
+          )}
           <Link
             href="/dashboard/agents"
             className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium px-6 py-2 rounded-lg transition-colors"
@@ -297,6 +312,7 @@ export default function CreateAgentPage() {
             {t("agents.new.cancel")}
           </Link>
         </div>
+        </fieldset>
       </form>
     </div>
   );

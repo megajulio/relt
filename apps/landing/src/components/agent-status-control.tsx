@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { getAgent, updateAgentStatus, type AgentDetail } from '@/lib/agents';
+import { isRoleForbidden, useAgentAccess } from '@/lib/agent-role';
 import { useT } from '@/i18n/provider';
 
 const STATUS_OPTIONS = ['active', 'paused', 'archived'] as const;
@@ -15,6 +16,8 @@ export default function AgentStatusControl({
   onUpdated: (a: AgentDetail) => void;
 }) {
   const t = useT();
+  // ORDEN-68 · R3/A-6: member y viewer no ven el control de estado.
+  const access = useAgentAccess();
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +42,7 @@ export default function AgentStatusControl({
       const fresh = await getAgent(agent.id);
       onUpdated(fresh);
     } catch (err: any) {
-      setError(err?.message || 'Error updating status');
+      setError(isRoleForbidden(err) ? t('agents.read_only_role') : err?.message || 'Error updating status');
     } finally {
       setBusy(false);
       setConfirmArchive(false);
@@ -48,12 +51,28 @@ export default function AgentStatusControl({
 
   return (
     <div className="space-y-3">
+      {access.readOnly && (
+        <div
+          data-testid="agents-read-only"
+          className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300"
+        >
+          {t('agents.read_only_role')}
+        </div>
+      )}
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
           {error}
         </div>
       )}
 
+      {access.readOnly ? (
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-400">{t("agents.status.status")}</span>
+          <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-medium capitalize bg-gray-700/50 text-gray-300">
+            {agent.status}
+          </span>
+        </div>
+      ) : (
       <div className="flex items-center gap-3">
         <label className="text-sm text-gray-400">{t("agents.status.status")}</label>
         <select
@@ -70,6 +89,7 @@ export default function AgentStatusControl({
         </select>
         {busy && <span className="text-xs text-gray-500">{t("agents.status.updating")}</span>}
       </div>
+      )}
 
       {confirmArchive && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 space-y-3">
